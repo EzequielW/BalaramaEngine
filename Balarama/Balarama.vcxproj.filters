@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\chess">
+      <UniqueIdentifier>{0ee74f19-9f08-48f1-9757-d1920f5f1284}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GUI">
+      <UniqueIdentifier>{be1412ec-8ab3-40be-b16c-5746075ad8d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\GUI\assets">
+      <UniqueIdentifier>{74d708cd-8fce-44e3-890d-afe50d3bf350}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine">
+      <UniqueIdentifier>{3f469ad2-7eb6-441e-9fd2-2b4c9a754553}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="chess\chess.cpp">
+      <Filter>Source Files\chess</Filter>
+    </ClCompile>
+    <ClCompile Include="chess\generator.cpp">
+      <Filter>Source Files\chess</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\minimax.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="chess\chess.h">
+      <Filter>Source Files\chess</Filter>
+    </ClInclude>
+    <ClInclude Include="chess\generator.h">
+      <Filter>Source Files\chess</Filter>
+    </ClInclude>
+    <ClInclude Include="chess\move_structs.h">
+      <Filter>Source Files\chess</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\minimax.h">
+      <Filter>Source Files\engine</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GUI\assets\black_bishop.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\black_king.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\black_knight.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\black_pawn.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\black_queen.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\black_rook.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_bishop.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_king.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_knight.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_pawn.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_queen.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+    <Image Include="GUI\assets\white_rook.png">
+      <Filter>Source Files\GUI\assets</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
