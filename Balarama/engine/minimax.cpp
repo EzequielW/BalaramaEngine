@@ -175,7 +175,9 @@ float Minimax::heuristicEval(Chess* chess) {
     return nodeEvaluation;
 }
 
-Evaluation Minimax::searchABPruning(Chess* chess, int depth, float alpha, float beta) {
+Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, float alpha, float beta) {
+    steps += 1;
+
     std::vector<Move> moveList = chess->getLegalMoves();
     if (depth == 0 || (chess->gameState & GAME_OVER)) {
         Evaluation eval;
@@ -190,7 +192,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, float alpha, float 
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, alpha, beta).result;
+            currentEval = searchABPruning(chess, depth - 1, steps, alpha, beta).result;
 
             if (currentEval > maxEval.result) {
                 maxEval.result = currentEval;
@@ -214,7 +216,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, float alpha, float 
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, alpha, beta).result;
+            currentEval = searchABPruning(chess, depth - 1, steps, alpha, beta).result;
 
             if (currentEval < minEval.result) {
                 minEval.result = currentEval;

@@ -21,6 +21,7 @@ void prepareScene(void);
 void presentScene(void);
 void handleClick(void);
 void draw_circle(SDL_Point center, int radius, SDL_Color color);
+void updateEvalTexts(void);
 void updateEval(void);
 
 typedef struct {
@@ -41,14 +42,14 @@ bool selectedMoves[64] = { 0 };
 
 const char* SquareText[] =
 {
-	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
-	"A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",
-	"A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3",
-	"A4", "B4", "C4", "D4", "E4", "F4", "G4", "H4",
-	"A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5",
-	"A6", "B6", "C6", "D6", "E6", "F6", "G6", "H6",
-	"A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",
-	"A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"
+	"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
+	"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
+	"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
+	"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4",
+	"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+	"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
+	"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
+	"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"
 };
 
 TTF_Font* Sans;
@@ -60,6 +61,8 @@ SDL_Rect moveRect;
 
 bool updatingEval = false;
 bool updateEvalRequest = false;
+int evalCounter = 0;
+int currentEval = 0;
 
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
@@ -80,14 +83,19 @@ int main(int argc, char* argv[]) {
 	pieceImage[B_QUEEN] = IMG_LoadTexture(app.renderer, "./GUI/assets/black_queen.png");
 	pieceImage[B_KING] = IMG_LoadTexture(app.renderer, "./GUI/assets/black_king.png");
 
+	Sans = TTF_OpenFont("Sans.ttf", 36);
+
+	updatingEval = true;
+	updateEvalTexts();
 	std::thread evalThread(updateEval);
 	evalThread.detach();
-
-	Sans = TTF_OpenFont("Sans.ttf", 36);
 
 	bool run = true;
 	while (run) {
 		if (updateEvalRequest && !updatingEval) {
+			updatingEval = true;
+			updateEvalTexts();
+
 			std::thread newEvalThread(updateEval);
 			newEvalThread.detach();
 			updateEvalRequest = false;
@@ -204,25 +212,10 @@ void prepareScene(void)
 	}
 
 	// Draw board evaluation
-	char evalBuffer[10];
-	snprintf(evalBuffer, sizeof evalBuffer, "%03.1f", evaluation.result);
-	const char* moveBuffer = SquareText[evaluation.move.squareTo];
-
-	SDL_Surface* evalSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : evalBuffer, textColor);
-	evalText = SDL_CreateTextureFromSurface(app.renderer, evalSurface);
-	evalRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - evalSurface->w / 2;
-	evalRect.y = 100;
-	evalRect.w = evalSurface->w;
-	evalRect.h = evalSurface->h;
-	SDL_FreeSurface(evalSurface);
-	
-	SDL_Surface* moveSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : moveBuffer, textColor);
-	moveText = SDL_CreateTextureFromSurface(app.renderer, moveSurface);
-	moveRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - moveSurface->w / 2;
-	moveRect.y = 200;
-	moveRect.w = moveSurface->w;
-	moveRect.h = moveSurface->h;
-	SDL_FreeSurface(moveSurface);
+	if (!updatingEval && currentEval != evalCounter) {
+		updateEvalTexts();
+		currentEval = evalCounter;
+	}
 
 	SDL_RenderCopy(app.renderer, moveText, NULL, &moveRect);
 	SDL_RenderCopy(app.renderer, evalText, NULL, &evalRect);
@@ -305,15 +298,70 @@ void draw_circle(SDL_Point center, int radius, SDL_Color color)
 	}
 }
 
+void updateEvalTexts() {
+	char evalBuffer[10];
+	snprintf(evalBuffer, sizeof evalBuffer, "%03.1f", evaluation.result);
+	const char* moveBuffer = SquareText[evaluation.move.squareTo];
+	char movePiece[5] = {};
+	switch (evaluation.move.pieceType) {
+	case W_BISHOP:
+	case B_BISHOP:
+		movePiece[0] = 'B';
+		break;
+	case W_KNIGHT:
+	case B_KNIGHT:
+		movePiece[0] = 'N';
+	case W_ROOK:
+	case B_ROOK:
+		movePiece[0] = 'R';
+		break;
+	case W_KING:
+	case B_KING:
+		movePiece[0] = 'K';
+		break;
+	case W_QUEEN:
+	case B_QUEEN:
+		movePiece[0] = 'Q';
+		break;
+	default:
+		break;
+	}
+
+	if (evaluation.move.cPieceType != UNKNOWN) {
+		movePiece[1] = 'x';
+	}
+
+	strcat_s(movePiece, moveBuffer);
+
+	SDL_Surface* evalSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : evalBuffer, textColor);
+	evalText = SDL_CreateTextureFromSurface(app.renderer, evalSurface);
+	evalRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - evalSurface->w / 2;
+	evalRect.y = 100;
+	evalRect.w = evalSurface->w;
+	evalRect.h = evalSurface->h;
+	SDL_FreeSurface(evalSurface);
+
+	SDL_Surface* moveSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : movePiece, textColor);
+	moveText = SDL_CreateTextureFromSurface(app.renderer, moveSurface);
+	moveRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - moveSurface->w / 2;
+	moveRect.y = 200;
+	moveRect.w = moveSurface->w;
+	moveRect.h = moveSurface->h;
+	SDL_FreeSurface(moveSurface);
+}
+
 void updateEval() {
-	updatingEval = true;
 	auto t1 = std::chrono::high_resolution_clock::now();
+	int totalSteps = 0;
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(&chessboardCopy, 4);
+	evaluation = mm.searchABPruning(&chessboardCopy, 4, totalSteps);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 	std::cout << ms_int.count() << "ms\n";
+	std::cout << totalSteps << " steps\n";
+
 	updatingEval = false;
+	evalCounter++;
 }

@@ -21,7 +21,7 @@ public:
 
     Minimax();
     float heuristicEval(Chess* chess);
-    Evaluation searchABPruning(Chess* chess, int depth, float alpha = -INFINITE_EVAL, float beta = INFINITE_EVAL);
+    Evaluation searchABPruning(Chess* chess, int depth, int& steps, float alpha = -INFINITE_EVAL, float beta = INFINITE_EVAL);
 };
 
 #endif // __MINIMAX__H__
