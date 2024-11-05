@@ -280,8 +280,13 @@ std::vector<Move> Chess::getLegalMoves(){
     for(Move m: pseudoList){
         makeMove(m);
         Square kingSquare = (Square)generator.bitScanForward(currentBoard[currentColor + W_KING]);
-        if(attacksToSquare(kingSquare, currentColor) == 0){
-            legalMoves.push_back(m);
+        if(attacksToSquare(kingSquare, currentColor) == 0) {
+            if (m.cPieceType == UNKNOWN) {
+                legalMoves.push_back(m);
+            }
+            else {
+                legalMoves.insert(legalMoves.begin(), m);
+            }
         }
         undoMove();
     }

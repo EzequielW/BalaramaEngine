@@ -311,6 +311,7 @@ void updateEvalTexts() {
 	case W_KNIGHT:
 	case B_KNIGHT:
 		movePiece[0] = 'N';
+		break;
 	case W_ROOK:
 	case B_ROOK:
 		movePiece[0] = 'R';
