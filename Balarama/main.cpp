@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <thread>
+#include <chrono>
 
 #include "chess/chess.h"
 #include "engine/minimax.h"
@@ -306,6 +307,13 @@ void draw_circle(SDL_Point center, int radius, SDL_Color color)
 
 void updateEval() {
 	updatingEval = true;
-	evaluation = mm.searchABPruning(chess, 2);
+	auto t1 = std::chrono::high_resolution_clock::now();
+
+	Chess chessboardCopy = chess;
+	evaluation = mm.searchABPruning(&chessboardCopy, 4);
+
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+	std::cout << ms_int.count() << "ms\n";
 	updatingEval = false;
 }

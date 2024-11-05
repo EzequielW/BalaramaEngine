@@ -97,12 +97,12 @@ Minimax::Minimax() {
     pieceScores[B_KING] = bkingScore;
 }
 
-float Minimax::heuristicEval(Chess chess) {
+float Minimax::heuristicEval(Chess* chess) {
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
 
-    if (chess.gameState & GAME_OVER) {
-        if (chess.colorTurn == WHITE) {
+    if (chess->gameState & GAME_OVER) {
+        if (chess->colorTurn == WHITE) {
             return INFINITE_EVAL;
         }
         else {
@@ -111,43 +111,43 @@ float Minimax::heuristicEval(Chess chess) {
     }
 
 	// Get number of moves each has
-	if (chess.colorTurn == WHITE) {
-        nodeScore[WHITE] = chess.getLegalMoves().size();
-		chess.colorTurn = BLACK;
-		chess.oppColor = WHITE;
-        nodeScore[BLACK] = chess.getLegalMoves().size();
-		chess.colorTurn = WHITE;
-		chess.oppColor = BLACK;
+	if (chess->colorTurn == WHITE) {
+        nodeScore[WHITE] = chess->getLegalMoves().size();
+        chess->colorTurn = BLACK;
+        chess->oppColor = WHITE;
+        nodeScore[BLACK] = chess->getLegalMoves().size();
+        chess->colorTurn = WHITE;
+        chess->oppColor = BLACK;
 	}
 	else {
-        nodeScore[BLACK] = chess.getLegalMoves().size();
-		chess.colorTurn = WHITE;
-		chess.oppColor = BLACK;
-        nodeScore[WHITE] = chess.getLegalMoves().size();
-		chess.colorTurn = BLACK;
-		chess.oppColor = WHITE;
+        nodeScore[BLACK] = chess->getLegalMoves().size();
+        chess->colorTurn = WHITE;
+        chess->oppColor = BLACK;
+        nodeScore[WHITE] = chess->getLegalMoves().size();
+        chess->colorTurn = BLACK;
+        chess->oppColor = WHITE;
 	}
 
     nodeEvaluation += 10 * (nodeScore[WHITE] - nodeScore[BLACK]);
 
 	// Evaluation depending on the number of pieces each side has
-	int wpawnSize = chess.generator.bitCountSet(chess.currentBoard[W_PAWN]);
-	int wknightSize = chess.generator.bitCountSet(chess.currentBoard[W_KNIGHT]);
-	int wbishopSize = chess.generator.bitCountSet(chess.currentBoard[W_BISHOP]);
-	int wrookSize = chess.generator.bitCountSet(chess.currentBoard[W_ROOK]);
-	int wqueenSize = chess.generator.bitCountSet(chess.currentBoard[W_QUEEN]);
-	int bpawnSize = chess.generator.bitCountSet(chess.currentBoard[B_PAWN]);
-	int bknightSize = chess.generator.bitCountSet(chess.currentBoard[B_KNIGHT]);
-	int bbishopSize = chess.generator.bitCountSet(chess.currentBoard[B_BISHOP]);
-	int brookSize = chess.generator.bitCountSet(chess.currentBoard[B_ROOK]);
-	int bqueenSize = chess.generator.bitCountSet(chess.currentBoard[B_QUEEN]);
+	int wpawnSize = chess->generator.bitCountSet(chess->currentBoard[W_PAWN]);
+	int wknightSize = chess->generator.bitCountSet(chess->currentBoard[W_KNIGHT]);
+	int wbishopSize = chess->generator.bitCountSet(chess->currentBoard[W_BISHOP]);
+	int wrookSize = chess->generator.bitCountSet(chess->currentBoard[W_ROOK]);
+	int wqueenSize = chess->generator.bitCountSet(chess->currentBoard[W_QUEEN]);
+	int bpawnSize = chess->generator.bitCountSet(chess->currentBoard[B_PAWN]);
+	int bknightSize = chess->generator.bitCountSet(chess->currentBoard[B_KNIGHT]);
+	int bbishopSize = chess->generator.bitCountSet(chess->currentBoard[B_BISHOP]);
+	int brookSize = chess->generator.bitCountSet(chess->currentBoard[B_ROOK]);
+	int bqueenSize = chess->generator.bitCountSet(chess->currentBoard[B_QUEEN]);
 
     nodeEvaluation += 1000 * (wqueenSize - bqueenSize) + 525 * (wrookSize - brookSize) + 350 * (wbishopSize - bbishopSize)
         + 350 * (wknightSize - bknightSize) + (wpawnSize - bpawnSize);
 
 
 	uint64_t boardCopy[14];
-	std::copy(chess.currentBoard, chess.currentBoard + 14, boardCopy);
+	std::copy(chess->currentBoard, chess->currentBoard + 14, boardCopy);
 
     // Sum all the pieces scores depending on the square they are placed
 	bool piecesChange = true;
@@ -156,7 +156,7 @@ float Minimax::heuristicEval(Chess chess) {
 		piecesChange = false;
         for (int i = (int)W_PAWN; i < (int)UNKNOWN; i++) {
             if (boardCopy[(Piece)i] > 0) {
-                int square = chess.generator.bitScanForward(boardCopy[(Piece)i]);
+                int square = chess->generator.bitScanForward(boardCopy[(Piece)i]);
                 nodeScore[(Piece)i] += pieceScores[(Piece)i][square];
                 boardCopy[(Piece)i] ^= (temp << square);
                 piecesChange = true;
@@ -175,21 +175,21 @@ float Minimax::heuristicEval(Chess chess) {
     return nodeEvaluation;
 }
 
-Evaluation Minimax::searchABPruning(Chess chess, int depth, float alpha, float beta) {
-    std::vector<Move> moveList = chess.getPseudoLegalMoves();
-    if (depth == 0 || (chess.gameState & GAME_OVER)) {
+Evaluation Minimax::searchABPruning(Chess* chess, int depth, float alpha, float beta) {
+    std::vector<Move> moveList = chess->getLegalMoves();
+    if (depth == 0 || (chess->gameState & GAME_OVER)) {
         Evaluation eval;
         eval.result = heuristicEval(chess);
         return eval;
     }
     
-    if (chess.colorTurn == WHITE) {
+    if (chess->colorTurn == WHITE) {
         Evaluation maxEval;
         maxEval.result = -INFINITE_EVAL;
         float currentEval = -INFINITE_EVAL;
 
         for (Move m : moveList) {
-            chess.makeMove(m);
+            chess->makeMove(m);
             currentEval = searchABPruning(chess, depth - 1, alpha, beta).result;
 
             if (currentEval > maxEval.result) {
@@ -197,12 +197,12 @@ Evaluation Minimax::searchABPruning(Chess chess, int depth, float alpha, float b
                 maxEval.move = m;
                 alpha = std::max(alpha, maxEval.result);
                 if (alpha >= beta) {
-                    chess.undoMove();
+                    chess->undoMove();
                     break;
                 }
             }
 
-            chess.undoMove();
+            chess->undoMove();
         }
 
         return maxEval;
@@ -213,7 +213,7 @@ Evaluation Minimax::searchABPruning(Chess chess, int depth, float alpha, float b
         float currentEval = INFINITE_EVAL;
 
         for (Move m : moveList) {
-            chess.makeMove(m);
+            chess->makeMove(m);
             currentEval = searchABPruning(chess, depth - 1, alpha, beta).result;
 
             if (currentEval < minEval.result) {
@@ -221,12 +221,12 @@ Evaluation Minimax::searchABPruning(Chess chess, int depth, float alpha, float b
                 minEval.move = m;
                 beta = std::min(beta, minEval.result);
                 if (alpha >= beta) {
-                    chess.undoMove();
+                    chess->undoMove();
                     break;
                 }
             }
 
-            chess.undoMove();
+            chess->undoMove();
         }
 
         return minEval;
