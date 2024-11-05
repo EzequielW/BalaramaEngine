@@ -1,10 +1,12 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <SDL_image.h>
 #include <iostream>
 #include <vector>
 #include <map>
 #include <string>
+#include <thread>
 
 #include "chess/chess.h"
 #include "engine/minimax.h"
@@ -18,6 +20,7 @@ void prepareScene(void);
 void presentScene(void);
 void handleClick(void);
 void draw_circle(SDL_Point center, int radius, SDL_Color color);
+void updateEval(void);
 
 typedef struct {
 	SDL_Renderer * renderer;
@@ -28,10 +31,34 @@ App app;
 
 std::map<Piece, SDL_Texture*> pieceImage;
 Chess chess;
+Minimax mm;
+Evaluation evaluation;
 std::vector<Piece> board = chess.getCurrentBoard();
 std::vector<Move> moves = chess.getLegalMoves();
 int selectedPiece = -1;
 bool selectedMoves[64] = { 0 };
+
+const char* SquareText[] =
+{
+	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
+	"A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",
+	"A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3",
+	"A4", "B4", "C4", "D4", "E4", "F4", "G4", "H4",
+	"A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5",
+	"A6", "B6", "C6", "D6", "E6", "F6", "G6", "H6",
+	"A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",
+	"A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"
+};
+
+TTF_Font* Sans;
+SDL_Color textColor = { 255, 255, 255 };
+SDL_Texture* evalText;
+SDL_Rect evalRect;
+SDL_Texture* moveText;
+SDL_Rect moveRect;
+
+bool updatingEval = false;
+bool updateEvalRequest = false;
 
 int main(int argc, char* argv[]) {
     SDL_SetMainReady();
@@ -52,15 +79,19 @@ int main(int argc, char* argv[]) {
 	pieceImage[B_QUEEN] = IMG_LoadTexture(app.renderer, "./GUI/assets/black_queen.png");
 	pieceImage[B_KING] = IMG_LoadTexture(app.renderer, "./GUI/assets/black_king.png");
 
-	Minimax mm;
-	Evaluation evaluation;
-	evaluation = mm.searchABPruning(chess, 3);
-	std::cout << evaluation.result << std::endl;
-	std::cout << (int)evaluation.move.squareFrom << std::endl;
-	std::cout << (int)evaluation.move.squareTo << std::endl;
+	std::thread evalThread(updateEval);
+	evalThread.detach();
+
+	Sans = TTF_OpenFont("Sans.ttf", 36);
 
 	bool run = true;
 	while (run) {
+		if (updateEvalRequest && !updatingEval) {
+			std::thread newEvalThread(updateEval);
+			newEvalThread.detach();
+			updateEvalRequest = false;
+		}
+
 		prepareScene();
 
 		SDL_Event event;
@@ -119,6 +150,7 @@ void initSDL(void)
 	}
 
 	IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
+	TTF_Init();
 }
 
 void prepareScene(void)
@@ -126,6 +158,7 @@ void prepareScene(void)
 	SDL_SetRenderDrawColor(app.renderer, 211, 211, 211, 255);
 	SDL_RenderClear(app.renderer);
 
+	// Draw chessboard
 	for (int y = 0; y < 8; y++) {
 		for (int x = 0; x < 8; x++) {
 			if ((x + y) % 2 == 0) {
@@ -168,6 +201,30 @@ void prepareScene(void)
 			}
 		}
 	}
+
+	// Draw board evaluation
+	char evalBuffer[10];
+	snprintf(evalBuffer, sizeof evalBuffer, "%03.1f", evaluation.result);
+	const char* moveBuffer = SquareText[evaluation.move.squareTo];
+
+	SDL_Surface* evalSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : evalBuffer, textColor);
+	evalText = SDL_CreateTextureFromSurface(app.renderer, evalSurface);
+	evalRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - evalSurface->w / 2;
+	evalRect.y = 100;
+	evalRect.w = evalSurface->w;
+	evalRect.h = evalSurface->h;
+	SDL_FreeSurface(evalSurface);
+	
+	SDL_Surface* moveSurface = TTF_RenderText_Solid(Sans, updatingEval ? "...loading" : moveBuffer, textColor);
+	moveText = SDL_CreateTextureFromSurface(app.renderer, moveSurface);
+	moveRect.x = SCREEN_HEIGHT + (SCREEN_WIDTH - SCREEN_HEIGHT) / 2 - moveSurface->w / 2;
+	moveRect.y = 200;
+	moveRect.w = moveSurface->w;
+	moveRect.h = moveSurface->h;
+	SDL_FreeSurface(moveSurface);
+
+	SDL_RenderCopy(app.renderer, moveText, NULL, &moveRect);
+	SDL_RenderCopy(app.renderer, evalText, NULL, &evalRect);
 }
 
 void presentScene(void)
@@ -221,6 +278,7 @@ void handleClick(void) {
 					chess.makeMove(m);
 					board = chess.getCurrentBoard();
 					moves = chess.getLegalMoves();
+					updateEvalRequest = true;
 					break;
 				}
 			}
@@ -244,4 +302,10 @@ void draw_circle(SDL_Point center, int radius, SDL_Color color)
 			}
 		}
 	}
+}
+
+void updateEval() {
+	updatingEval = true;
+	evaluation = mm.searchABPruning(chess, 2);
+	updatingEval = false;
 }
