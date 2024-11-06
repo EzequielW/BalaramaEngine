@@ -20,8 +20,8 @@ public:
     std::map<Piece, std::vector<int>> pieceScores;
 
     Minimax();
-    float heuristicEval(Chess* chess);
-    Evaluation searchABPruning(Chess* chess, int depth, int& steps, float alpha = -INFINITE_EVAL, float beta = INFINITE_EVAL);
+    float heuristicEval(Chess* chess, size_t totalMoves);
+    Evaluation searchABPruning(Chess* chess, int depth, int& steps, long long& heuristicTime, long long& moveGenTime, float alpha = -INFINITE_EVAL, float beta = INFINITE_EVAL);
 };
 
 #endif // __MINIMAX__H__

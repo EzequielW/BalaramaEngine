@@ -1,4 +1,5 @@
 #include "minimax.h"
+#include <chrono>
 
 Minimax::Minimax() {
     std::vector<int> wpawnScore{
@@ -97,7 +98,7 @@ Minimax::Minimax() {
     pieceScores[B_KING] = bkingScore;
 }
 
-float Minimax::heuristicEval(Chess* chess) {
+float Minimax::heuristicEval(Chess* chess, size_t totalMoves) {
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
 
@@ -112,7 +113,7 @@ float Minimax::heuristicEval(Chess* chess) {
 
 	// Get number of moves each has
 	if (chess->colorTurn == WHITE) {
-        nodeScore[WHITE] = chess->getLegalMoves().size();
+        nodeScore[WHITE] = totalMoves;
         chess->colorTurn = BLACK;
         chess->oppColor = WHITE;
         nodeScore[BLACK] = chess->getLegalMoves().size();
@@ -120,7 +121,7 @@ float Minimax::heuristicEval(Chess* chess) {
         chess->oppColor = BLACK;
 	}
 	else {
-        nodeScore[BLACK] = chess->getLegalMoves().size();
+        nodeScore[BLACK] = totalMoves;
         chess->colorTurn = WHITE;
         chess->oppColor = BLACK;
         nodeScore[WHITE] = chess->getLegalMoves().size();
@@ -175,13 +176,22 @@ float Minimax::heuristicEval(Chess* chess) {
     return nodeEvaluation;
 }
 
-Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, float alpha, float beta) {
+Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, long long& heuristicTime, long long& moveGenTime, float alpha, float beta) {
     steps += 1;
 
+    auto t1 = std::chrono::high_resolution_clock::now();
     std::vector<Move> moveList = chess->getLegalMoves();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    moveGenTime += ms_int.count();
+
     if (depth == 0 || (chess->gameState & GAME_OVER)) {
+        t1 = std::chrono::high_resolution_clock::now();
         Evaluation eval;
-        eval.result = heuristicEval(chess);
+        eval.result = heuristicEval(chess, moveList.size());
+        t2 = std::chrono::high_resolution_clock::now();
+        ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        heuristicTime += ms_int.count();
         return eval;
     }
     
@@ -192,7 +202,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, float a
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, steps, alpha, beta).result;
+            currentEval = searchABPruning(chess, depth - 1, steps, heuristicTime, moveGenTime, alpha, beta).result;
 
             if (currentEval > maxEval.result) {
                 maxEval.result = currentEval;
@@ -216,7 +226,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, float a
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, steps, alpha, beta).result;
+            currentEval = searchABPruning(chess, depth - 1, steps, heuristicTime, moveGenTime, alpha, beta).result;
 
             if (currentEval < minEval.result) {
                 minEval.result = currentEval;

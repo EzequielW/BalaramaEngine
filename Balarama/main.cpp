@@ -354,14 +354,18 @@ void updateEvalTexts() {
 void updateEval() {
 	auto t1 = std::chrono::high_resolution_clock::now();
 	int totalSteps = 0;
+	long long heuristicTime = 0;
+	long long moveGenTime = 0;
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(&chessboardCopy, 4, totalSteps);
+	evaluation = mm.searchABPruning(&chessboardCopy, 4, totalSteps, heuristicTime, moveGenTime);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 	std::cout << ms_int.count() << "ms\n";
 	std::cout << totalSteps << " steps\n";
+	std::cout << heuristicTime / 1000 << "ms heuristic\n";
+	std::cout << moveGenTime / 1000 << "ms move gen\n\n";
 
 	updatingEval = false;
 	evalCounter++;

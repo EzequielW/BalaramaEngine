@@ -175,6 +175,8 @@ std::vector<Move> Chess::getMovesFromBB(uint64_t bitboard, Square squareFrom, Pi
 std::vector<Move> Chess::getPseudoLegalMoves(){
     uint64_t playerBoard = currentBoard[colorTurn];
     std::vector<Move> moveList;
+    std::vector<Move> nonCaptureMoves;
+    std::vector<Move> captureMoves;
     Square kingSquare = A1;
 
     while(playerBoard > 0){
@@ -227,12 +229,15 @@ std::vector<Move> Chess::getPseudoLegalMoves(){
         std::vector<Move> pieceMoves = getMovesFromBB(moves, (Square)sq, colorTurn, pieceType, false);
         std::vector<Move> pieceCaptures = getMovesFromBB(captures, (Square)sq, colorTurn, pieceType, true);
 
-        // Add captures first to improve minmax efficiency 
-        moveList.insert(moveList.end(), pieceCaptures.begin(), pieceCaptures.end());
-        moveList.insert(moveList.end(), pieceMoves.begin(), pieceMoves.end());
+        captureMoves.insert(captureMoves.end(), pieceCaptures.begin(), pieceCaptures.end());
+        nonCaptureMoves.insert(nonCaptureMoves.end(), pieceMoves.begin(), pieceMoves.end());
 
         playerBoard ^= (i << sq);
     }
+
+    // Add captures first to improve minmax efficiency 
+    moveList.insert(moveList.end(), captureMoves.begin(), captureMoves.end());
+    moveList.insert(moveList.end(), nonCaptureMoves.begin(), nonCaptureMoves.end());
 
     uint64_t attToKing = attacksToSquare(kingSquare, colorTurn);
     // Check for castling rights, only if the king is not in check.
@@ -281,12 +286,7 @@ std::vector<Move> Chess::getLegalMoves(){
         makeMove(m);
         Square kingSquare = (Square)generator.bitScanForward(currentBoard[currentColor + W_KING]);
         if(attacksToSquare(kingSquare, currentColor) == 0) {
-            if (m.cPieceType == UNKNOWN) {
-                legalMoves.push_back(m);
-            }
-            else {
-                legalMoves.insert(legalMoves.begin(), m);
-            }
+            legalMoves.push_back(m);
         }
         undoMove();
     }
