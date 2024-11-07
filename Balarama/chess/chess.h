@@ -47,7 +47,7 @@ public:
     void makeMove(Move pieceMove);
     void undoMove();
     uint64_t attacksToSquare(Square sq, Piece color);
-    std::vector<Move> getMovesFromBB(uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
+    void getMovesFromBB(std::vector<Move>& moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
     std::vector<Move> getPseudoLegalMoves();
     std::vector<Move> getLegalMoves();
     std::vector<Piece> getCurrentBoard();

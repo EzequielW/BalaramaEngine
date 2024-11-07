@@ -111,25 +111,25 @@ float Minimax::heuristicEval(Chess* chess, size_t totalMoves) {
         }
     }
 
-	// Get number of moves each has
-	if (chess->colorTurn == WHITE) {
-        nodeScore[WHITE] = totalMoves;
-        chess->colorTurn = BLACK;
-        chess->oppColor = WHITE;
-        nodeScore[BLACK] = chess->getLegalMoves().size();
-        chess->colorTurn = WHITE;
-        chess->oppColor = BLACK;
-	}
-	else {
-        nodeScore[BLACK] = totalMoves;
-        chess->colorTurn = WHITE;
-        chess->oppColor = BLACK;
-        nodeScore[WHITE] = chess->getLegalMoves().size();
-        chess->colorTurn = BLACK;
-        chess->oppColor = WHITE;
-	}
+	//// Get number of moves each has
+	//if (chess->colorTurn == WHITE) {
+ //       nodeScore[WHITE] = totalMoves;
+ //       chess->colorTurn = BLACK;
+ //       chess->oppColor = WHITE;
+ //       nodeScore[BLACK] = chess->getPseudoLegalMoves().size();
+ //       chess->colorTurn = WHITE;
+ //       chess->oppColor = BLACK;
+	//}
+	//else {
+ //       nodeScore[BLACK] = totalMoves;
+ //       chess->colorTurn = WHITE;
+ //       chess->oppColor = BLACK;
+ //       nodeScore[WHITE] = chess->getPseudoLegalMoves().size();
+ //       chess->colorTurn = BLACK;
+ //       chess->oppColor = WHITE;
+	//}
 
-    nodeEvaluation += 10 * (nodeScore[WHITE] - nodeScore[BLACK]);
+ //   nodeEvaluation += 10 * (nodeScore[WHITE] - nodeScore[BLACK]);
 
 	// Evaluation depending on the number of pieces each side has
 	int wpawnSize = chess->generator.bitCountSet(chess->currentBoard[W_PAWN]);

@@ -358,7 +358,7 @@ void updateEval() {
 	long long moveGenTime = 0;
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(&chessboardCopy, 4, totalSteps, heuristicTime, moveGenTime);
+	evaluation = mm.searchABPruning(&chessboardCopy, 5, totalSteps, heuristicTime, moveGenTime);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
