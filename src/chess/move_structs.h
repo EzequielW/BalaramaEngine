@@ -1,6 +1,8 @@
 #ifndef __MOVE_STRUCTS__
 #define __MOVE_STRUCTS__
 
+#include <string>
+
 enum Piece{
     WHITE,      BLACK,
     W_PAWN,     B_PAWN,
@@ -46,4 +48,8 @@ typedef struct Move{
     Square castleTo;
     int moveState = 0;
 }Move;
+
+char pieceToString(Piece piece);
+std::string squareToString(Square square);
+
 #endif // __MOVE_STRUCTS__

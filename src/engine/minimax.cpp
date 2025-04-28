@@ -98,7 +98,7 @@ Minimax::Minimax() {
     pieceScores[B_KING] = bkingScore;
 }
 
-float Minimax::heuristicEval(Chess* chess, size_t totalMoves) {
+float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
 
@@ -176,7 +176,23 @@ float Minimax::heuristicEval(Chess* chess, size_t totalMoves) {
     return nodeEvaluation;
 }
 
-Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, long long& heuristicTime, long long& moveGenTime, float alpha, float beta) {
+Evaluation Minimax::searchABPruning(Chess chess, int depth) {
+    int steps = 0;
+    long long heuristicTime = 0;
+    long long moveGenTime = 0;
+    float alpha = -INFINITE_EVAL;
+    float beta = INFINITE_EVAL;
+    std::shared_ptr<Chess> chessRef = std::make_shared<Chess>(chess);
+
+    Evaluation evaluation = searchABPruningExec(chessRef, depth, alpha, beta, steps, heuristicTime, moveGenTime);
+
+    evaluation.steps = steps;
+    evaluation.heuristicTime = heuristicTime;
+    evaluation.moveGenTime = moveGenTime;
+    return evaluation;
+}
+
+Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth, float alpha, float beta, int& steps, long long& heuristicTime, long long& moveGenTime) {
     steps += 1;
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -202,7 +218,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, long lo
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, steps, heuristicTime, moveGenTime, alpha, beta).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
 
             if (currentEval > maxEval.result) {
                 maxEval.result = currentEval;
@@ -226,7 +242,7 @@ Evaluation Minimax::searchABPruning(Chess* chess, int depth, int& steps, long lo
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruning(chess, depth - 1, steps, heuristicTime, moveGenTime, alpha, beta).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
 
             if (currentEval < minEval.result) {
                 minEval.result = currentEval;

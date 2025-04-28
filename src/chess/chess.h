@@ -3,6 +3,9 @@
 
 #include <cstdint>
 #include <vector>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+#endif
 
 #include "generator.h"
 #include "move_structs.h"
@@ -40,6 +43,10 @@ public:
     // Tell us about castling rights and who is going to move next
     int gameState;
     int enpassant;
+    // Moves since capture or pawn move
+    int halfMoves;
+    int totalMoves;
+
     Piece colorTurn;
     Piece oppColor;
 
@@ -52,6 +59,11 @@ public:
     std::vector<Move> getLegalMoves();
     std::vector<Piece> getCurrentBoard();
     Piece getSquareColor(int sq);
+    std::string getFen();
+    #ifdef __EMSCRIPTEN__
+    emscripten::val getBoardAsJsArray();
+    emscripten::val getLegalMovesAsJsArray();
+    #endif
 };
 
 #endif // __CHESS_LOGIC__

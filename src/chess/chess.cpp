@@ -2,7 +2,9 @@
 
 Chess::Chess(){
     gameState = CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8;
-    enpassant = 0;
+    enpassant = -1;
+    halfMoves = 0;
+    totalMoves = 1;
     colorTurn = WHITE;
     oppColor = BLACK;
 }
@@ -362,3 +364,104 @@ Piece Chess::getSquareColor(int sq) {
 
     return sqColor;
 }
+
+std::string Chess::getFen() {
+    std::vector<Piece> board = getCurrentBoard();
+    std::string fen = "";
+
+    // Set pieces position
+    for(int i = 7; i >= 0; i--) {
+        int emptyCount = 0;
+
+        for(int j = 0; j < 8; j++) {
+            int index = i * 8 + j;
+
+            char squareValue = pieceToString(board[index]);
+
+            if(squareValue == '-') {
+                emptyCount++;
+            }
+            else if(emptyCount > 0) {
+                char emptySpaces = '0' + emptyCount;
+                fen += emptySpaces;
+                emptyCount = 0;
+            }
+            
+            if(squareValue != '-') {
+                fen += squareValue;
+            }
+        }
+
+        if(emptyCount > 0) {
+            char emptySpaces = '0' + emptyCount;
+            fen += emptySpaces;
+            emptyCount = 0;
+        }
+
+        if(i != 0) {
+            fen += '/';
+        }
+    }
+
+    // Color turn to move
+    fen += ' ';
+    fen += pieceToString(colorTurn);
+
+    // Castling rights
+    fen += ' ';
+    std::string castlingRights = "";
+    castlingRights += gameState & CASTLE_H1 ? "K" : "";
+    castlingRights += gameState & CASTLE_A1 ? "Q" : "";
+    castlingRights += gameState & CASTLE_H8 ? "k" : "";
+    castlingRights += gameState & CASTLE_A8 ? "q" : "";
+
+    if(castlingRights.empty()) {
+        fen += '-';
+    }
+    else {
+        fen += castlingRights;
+    }
+
+    // En passant
+    fen += ' ';
+    if(enpassant > 0) {
+        fen += squareToString((Square) enpassant);
+    }
+    else {
+        fen += '-';
+    }
+
+    // Half moves
+    fen += ' ' + std::to_string(halfMoves);
+
+    // Total moves
+    fen += ' ' + std::to_string(totalMoves);
+
+    return fen;
+}
+
+#ifdef __EMSCRIPTEN__
+emscripten::val Chess::getBoardAsJsArray() {
+    std::vector<Piece> board = getCurrentBoard();
+    emscripten::val jsArray = emscripten::val::array();
+
+    // Convert std::vector<Piece> to a JavaScript array
+    for (size_t i = 0; i < board.size(); ++i) {
+        jsArray.call<void>("push", emscripten::val(board[i]));  // Push each piece
+    }
+
+    return jsArray;
+}
+
+emscripten::val Chess::getLegalMovesAsJsArray() {
+    std::vector<Move> legalMoves = getLegalMoves();
+    emscripten::val jsArray = emscripten::val::array();
+
+    // Convert std::vector<Move> to a JavaScript array
+    for (size_t i = 0; i < legalMoves.size(); ++i) {
+        jsArray.call<void>("push", emscripten::val(legalMoves[i]));  // Push each move
+    }
+
+    return jsArray;
+}
+#endif

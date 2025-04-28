@@ -3,7 +3,6 @@ set(CMAKE_LINKER "C:/clang/bin/lld-link.exe")
 cmake_minimum_required(VERSION 3.15)
 project(BalaramaEngine)
 
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -17,6 +16,7 @@ find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED) 
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+list(REMOVE_ITEM SOURCES "src/bindings.cpp")
 file(GLOB_RECURSE HEADERS "src/*.h")
 file(GLOB_RECURSE SPRITES "src/GUI/assets/*.png")
 
