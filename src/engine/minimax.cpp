@@ -104,10 +104,10 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {
 
     if (chess->gameState & GAME_OVER) {
         if (chess->colorTurn == WHITE) {
-            return INFINITE_EVAL;
+            return -INFINITE_EVAL;
         }
         else {
-            return -INFINITE_EVAL;
+            return INFINITE_EVAL;
         }
     }
 

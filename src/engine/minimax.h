@@ -9,7 +9,7 @@
 
 #include "../chess/chess.h"
 
-const float INFINITE_EVAL = 1000.0f;
+const float INFINITE_EVAL = 10000.0f;
 
 typedef struct {
     float result;
