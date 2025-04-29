@@ -49,27 +49,27 @@ void Chess::makeMove(Move pieceMove){
     if(pieceMove.pieceType == (pieceMove.pieceColor + W_ROOK)){
         switch(pieceMove.squareFrom){
             case A1:
+                pieceMove.moveState = gameState & CASTLE_A1;
                 gameState &= ~CASTLE_A1;
-                pieceMove.moveState = CASTLE_A1;
                 break;
             case H1:
+                pieceMove.moveState = gameState & CASTLE_H1;
                 gameState &= ~CASTLE_H1;
-                pieceMove.moveState = CASTLE_H1;
                 break;
             case A8:
+                pieceMove.moveState = gameState & CASTLE_A8;
                 gameState &= ~CASTLE_A8;
-                pieceMove.moveState = CASTLE_A8;
                 break;
             case H8:
+                pieceMove.moveState = gameState & CASTLE_H8;
                 gameState &= ~CASTLE_H8;
-                pieceMove.moveState = CASTLE_H8;
                 break;
             default: break;
         }
     }
     else if(pieceMove.pieceType == (pieceMove.pieceColor + W_KING)){
-        gameState ^= (CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8);
-        pieceMove.moveState = (CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8);
+        pieceMove.moveState = gameState & (pieceMove.pieceColor == WHITE ? (CASTLE_A1 | CASTLE_H1) : (CASTLE_A8 | CASTLE_H8));
+        gameState &= pieceMove.pieceColor == WHITE ? ~(CASTLE_A1 | CASTLE_H1) : ~(CASTLE_A8 | CASTLE_H8);
     }
 
     // Check if its castle and move the rook
@@ -410,10 +410,10 @@ std::string Chess::getFen() {
     // Castling rights
     fen += ' ';
     std::string castlingRights = "";
-    castlingRights += gameState & CASTLE_H1 ? "K" : "";
-    castlingRights += gameState & CASTLE_A1 ? "Q" : "";
-    castlingRights += gameState & CASTLE_H8 ? "k" : "";
-    castlingRights += gameState & CASTLE_A8 ? "q" : "";
+    castlingRights += (gameState & CASTLE_H1) ? "K" : "";
+    castlingRights += (gameState & CASTLE_A1) ? "Q" : "";
+    castlingRights += (gameState & CASTLE_H8) ? "k" : "";
+    castlingRights += (gameState & CASTLE_A8) ? "q" : "";
 
     if(castlingRights.empty()) {
         fen += '-';

@@ -273,6 +273,7 @@ void handleClick(void) {
 					chess.makeMove(m);
 					board = chess.getCurrentBoard();
 					moves = chess.getLegalMoves();
+					std::cout << "Fen value: " << chess.getFen() << std::endl;
 					updateEvalRequest = true;
 					break;
 				}
