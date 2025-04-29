@@ -185,7 +185,8 @@ std::vector<Move> Chess::getPseudoLegalMoves(){
         Piece pieceType = UNKNOWN;
 
         if(currentBoard[colorTurn + W_PAWN] & (i << sq)){
-            moves = generator.pawnMoves[colorTurn][sq];
+            uint64_t blockers = generator.rookMoves[sq] & occupiedBoard;
+            moves = generator.pawnMoves[colorTurn][sq] & generator.rookMoveboard[sq][blockers];
             captures = generator.pawnAttacks[colorTurn][sq];
             pieceType = (Piece)(colorTurn + W_PAWN);
         }
