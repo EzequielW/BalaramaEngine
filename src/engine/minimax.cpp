@@ -3,7 +3,7 @@
 #include <algorithm>
 
 Minimax::Minimax() {
-    std::vector<int> wpawnScore{
+    int wpawnScore[64] = {
         0,  0,  0,  0,  0,  0,  0,  0,
         5, 10, 10,-20,-20, 10, 10,  5,
         5, -5,-10,  0,  0,-10, -5,  5,
@@ -13,7 +13,7 @@ Minimax::Minimax() {
         0, 50, 50, 50, 50, 50, 50, 50,
         0,  0,  0,  0,  0,  0,  0,  0
     };
-    std::vector<int> wknightScore{
+    int wknightScore[64] = {
         -50,-40,-30,-30,-30,-30,-40,-50,
         -40,-20,  0,  5,  5,  0,-20,-40,
         -30,  5, 10, 15, 15, 10,  5,-30,
@@ -23,7 +23,7 @@ Minimax::Minimax() {
         -40,-20,  0,  0,  0,  0,-20,-40,
         -50,-40,-30,-30,-30,-30,-40,-50
     };
-    std::vector<int> wbishopScore{
+    int wbishopScore[64] = {
         -20,-10,-10,-10,-10,-10,-10,-20,
         -10,  5,  0,  0,  0,  0,  5,-10,
         -10, 10, 10, 10, 10, 10, 10,-10,
@@ -33,7 +33,7 @@ Minimax::Minimax() {
         -10,  0,  0,  0,  0,  0,  0,-10,
         -20,-10,-10,-10,-10,-10,-10,-20
     };
-    std::vector<int> wrookScore{
+    int wrookScore[64] = {
         0,  0,  0,  5,  5,  0,  0,  0,
         -5,  0,  0,  0,  0,  0,  0, -5,
         -5,  0,  0,  0,  0,  0,  0, -5,
@@ -43,7 +43,7 @@ Minimax::Minimax() {
         5, 10, 10, 10, 10, 10, 10,  5,
         0,  0,  0,  0,  0,  0,  0,  0
     };
-    std::vector<int> wqueenScore{
+    int wqueenScore[64] = {
         -20,-10,-10, -5, -5,-10,-10,-20,
         -10,  0,  5,  0,  0,  0,  0,-10,
         -10,  5,  5,  5,  5,  5,  0,-10,
@@ -53,7 +53,7 @@ Minimax::Minimax() {
         -10,  0,  0,  0,  0,  0,  0,-10,
         -20,-10,-10, -5, -5,-10,-10,-20
     };
-    std::vector<int> wkingScore{
+    int wkingScore[64] = {
         20, 30, 10,  0,  0, 10, 30, 20,
         20, 20,  0,  0,  0,  0, 20, 20,
         10,-20,-20,-20,-20,-20,-20,-10,
@@ -63,12 +63,12 @@ Minimax::Minimax() {
         -30,-40,-40,-50,-50,-40,-40,-30,
         -30,-40,-40,-50,-50,-40,-40,-30
     };
-    std::vector<int> bpawnScore(64, 0);
-    std::vector<int> bknightScore(64, 0);
-    std::vector<int> bbishopScore(64, 0);
-    std::vector<int> brookScore(64, 0);
-    std::vector<int> bqueenScore(64, 0);
-    std::vector<int> bkingScore(64, 0);
+    int bpawnScore[64] = {0};
+    int bknightScore[64] = {0};
+    int bbishopScore[64] = {0};
+    int brookScore[64] = {0};
+    int bqueenScore[64] = {0};
+    int bkingScore[64] = {0};
 
 	// Reversing scores for the black side
 	for (int i = 0; i < 8; i++) {
@@ -85,18 +85,18 @@ Minimax::Minimax() {
 		}
 	}
 
-    pieceScores[W_PAWN] = wpawnScore;
-    pieceScores[W_KNIGHT] = wknightScore;
-    pieceScores[W_BISHOP] = wbishopScore;
-    pieceScores[W_ROOK] = wrookScore;
-    pieceScores[W_QUEEN] = wqueenScore;
-    pieceScores[W_KING] = wkingScore;
-    pieceScores[B_PAWN] = bpawnScore;
-    pieceScores[B_KNIGHT] = bknightScore;
-    pieceScores[B_BISHOP] = bbishopScore;
-    pieceScores[B_ROOK] = brookScore;
-    pieceScores[B_QUEEN] = bqueenScore;
-    pieceScores[B_KING] = bkingScore;
+    std::copy(std::begin(wpawnScore), std::end(wpawnScore), std::begin(pieceScores[W_PAWN]));
+    std::copy(std::begin(wknightScore), std::end(wknightScore), std::begin(pieceScores[W_KNIGHT]));
+    std::copy(std::begin(wbishopScore), std::end(wbishopScore), std::begin(pieceScores[W_BISHOP]));
+    std::copy(std::begin(wrookScore), std::end(wrookScore), std::begin(pieceScores[W_ROOK]));
+    std::copy(std::begin(wqueenScore), std::end(wqueenScore), std::begin(pieceScores[W_QUEEN]));
+    std::copy(std::begin(wkingScore), std::end(wkingScore), std::begin(pieceScores[W_KING]));
+    std::copy(std::begin(bpawnScore), std::end(bpawnScore), std::begin(pieceScores[B_PAWN]));
+    std::copy(std::begin(bknightScore), std::end(bknightScore), std::begin(pieceScores[B_KNIGHT]));
+    std::copy(std::begin(bbishopScore), std::end(bbishopScore), std::begin(pieceScores[B_BISHOP]));
+    std::copy(std::begin(brookScore), std::end(brookScore), std::begin(pieceScores[B_ROOK]));
+    std::copy(std::begin(bqueenScore), std::end(bqueenScore), std::begin(pieceScores[B_QUEEN]));
+    std::copy(std::begin(bkingScore), std::end(bkingScore), std::begin(pieceScores[B_KING]));
 }
 
 float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {

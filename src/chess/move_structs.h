@@ -48,6 +48,10 @@ typedef struct Move{
     Square castleFrom;
     Square castleTo;
     int moveState = 0;
+
+    bool isCastling() {
+        return castleTo != A1;
+    };
 }Move;
 
 constexpr size_t MAX_MOVES = 256;

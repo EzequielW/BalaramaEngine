@@ -2,7 +2,6 @@
 #define __GENERATOR__
 #include <cstdint>
 #include <map>
-#include <vector>
 #include <iostream>
 
 #include "move_structs.h"
@@ -25,13 +24,13 @@ public:
 
     // This maps have as index the bitboard resulting from & operation between the moveboard and the blockerboard.
     // Then returns the bitboard with the allowed moves. Captures and friendly pieces are filtered afterwards.
-    std::map<int, std::map<uint64_t, uint64_t>> rookMoveboard;
-    std::map<int, std::map<uint64_t, uint64_t>> bishopMoveboard;
+    std::map<uint64_t, uint64_t> rookMoveboard[64];
+    std::map<uint64_t, uint64_t> bishopMoveboard[64];
 
     // This maps work in a similar way to moveboards, but instead consider the moves after the first blocker.
     // They are used to check for absolute pins.
-    std::map<int, std::map<uint64_t, uint64_t>> rookXrays;
-    std::map<int, std::map<uint64_t, uint64_t>> bishopXrays;
+    std::map<uint64_t, uint64_t> rookXrays[64];
+    std::map<uint64_t, uint64_t> bishopXrays[64];
 
     // Constructor calls all the generation methods
     Generator();

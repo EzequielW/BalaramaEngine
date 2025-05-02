@@ -1,7 +1,6 @@
 #ifndef __MINIMAX_H__
 #define __MINIMAX_H__
 
-#include <vector>
 #include <iterator>
 #include <cstdint>
 #include <map>
@@ -21,7 +20,7 @@ typedef struct {
 
 class Minimax {
 public:
-    std::map<Piece, std::vector<int>> pieceScores;
+    int pieceScores[15][64] = {0};
 
     Minimax();
     float heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves);

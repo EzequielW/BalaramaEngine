@@ -17,7 +17,7 @@ Chess::Chess(){
         uint64_t bb = currentBoard[p];
         while (bb) {
             uint64_t sqBB = bb & -bb;
-            int sq = generator.bitScanForward(sqBB);
+            int sq = __builtin_ctzll(sqBB);
             bb ^= sqBB;
             pieceAt[sq] = static_cast<Piece>(p);
         }
@@ -202,9 +202,6 @@ MoveList Chess::getPseudoLegalMoves(){
         false  // UNKNOWN
     };
 
-    constexpr uint64_t FILE_A = 0x0101010101010101ULL;
-    constexpr uint64_t FILE_H = 0x8080808080808080ULL;
-
     int sq;
     while(playerBoard){
         int sq = __builtin_ctzll(playerBoard);
@@ -269,56 +266,96 @@ MoveList Chess::getPseudoLegalMoves(){
         }
     }
 
-    uint64_t attToKing = attacksToSquare(kingSquare, colorTurn);
     // Check for castling rights, only if the king is not in check.
-    if(attToKing == 0){
-        // Also check if the castling path is clear.
-        if(colorTurn == WHITE){
-            bool path = (currentBoard[WHITE] & 14) == 0;
-            path = path && (attacksToSquare(D1, colorTurn) == 0) && (attacksToSquare(C1, colorTurn) == 0);
-            if((gameState & CASTLE_A1) && path){
-                Move castle = {E1, C1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, A1, D1};
-                moveList.add(castle);
-            }
-            path = (currentBoard[WHITE] & 96) == 0;
-            path = path && (attacksToSquare(F1, colorTurn) == 0) && (attacksToSquare(G1, colorTurn) == 0);
-            if((gameState & CASTLE_H1) && path){
-                Move castle = {E1, G1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, H1, F1};
-                moveList.add(castle);
-            }
+    if(colorTurn == WHITE) {
+        if(gameState & CASTLE_A1){
+            Move castle = {E1, C1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, A1, D1};
+            moveList.add(castle);
         }
-        else{
-            bool path = (currentBoard[BLACK] & 1008806316530991104U) == 0;
-            path = path && (attacksToSquare(D8, colorTurn) == 0) && (attacksToSquare(C8, colorTurn) == 0);
-            if((gameState & CASTLE_A8) && path){
-                Move castle = {E8, C8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, A8, D8};
-                moveList.add(castle);
-            }
-            path = (currentBoard[BLACK] & 6917529027641081856U) == 0;
-            path = path && (attacksToSquare(F8, colorTurn) == 0) && (attacksToSquare(G8, colorTurn) == 0);
-            if((gameState & CASTLE_H8) && path){
-                Move castle = {E8, G8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, H8, F8};
-                moveList.add(castle);
-            }
+        if(gameState & CASTLE_H1){
+            Move castle = {E1, G1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, H1, F1};
+            moveList.add(castle);
+        }
+    }
+    else {
+        if(gameState & CASTLE_A8){
+            Move castle = {E8, C8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, A8, D8};
+            moveList.add(castle);
+        }
+        if(gameState & CASTLE_H8){
+            Move castle = {E8, G8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, H8, F8};
+            moveList.add(castle);
         }
     }
 
     return moveList;
 }
 
+bool Chess::isLegal(Move move, Square kingSquare) {
+    if(move.isCastling()) {
+        bool pathClear = false;
+
+        switch(move.castleFrom){
+            case A1: {
+                bool path = (occupiedBoard & 14) == 0;
+                pathClear = path && (attacksToSquare(D1, colorTurn) == 0) && (attacksToSquare(C1, colorTurn) == 0);
+                break;
+            }
+            case H1: {
+                bool path = (occupiedBoard & 96) == 0;
+                pathClear = path && (attacksToSquare(F1, colorTurn) == 0) && (attacksToSquare(G1, colorTurn) == 0);
+                break;
+            }
+            case A8: {
+                bool path = (occupiedBoard & 1008806316530991104U) == 0;
+                pathClear = path && (attacksToSquare(D8, colorTurn) == 0) && (attacksToSquare(C8, colorTurn) == 0);
+                break;
+            }
+            case H8: {
+                bool path = (occupiedBoard & 6917529027641081856U) == 0;
+                pathClear = path && (attacksToSquare(F8, colorTurn) == 0) && (attacksToSquare(G8, colorTurn) == 0);
+                break;
+            }
+            default: break;
+        }
+
+        if(!pathClear) return false;
+        if(attacksToSquare(kingSquare, colorTurn)) return false;
+
+        makeMove(move);
+        Square newKingSquare = (Square)__builtin_ctzll(currentBoard[oppColor + W_KING]);
+        bool kingSafe = attacksToSquare(newKingSquare, oppColor) == 0;
+        undoMove();
+
+        return kingSafe;
+    }
+    else if(move.pieceType == W_KING || move.pieceType == B_KING) {
+        makeMove(move);
+        Square newKingSquare = (Square)__builtin_ctzll(currentBoard[oppColor + W_KING]);
+        bool kingSafe = attacksToSquare(newKingSquare, oppColor) == 0;
+        undoMove();
+
+        return kingSafe;
+    }
+
+    makeMove(move);
+    // OppColor because after making the move colors switch
+    bool kingSafe = attacksToSquare(kingSquare, oppColor) == 0;
+    undoMove();
+
+    return kingSafe;
+}
+
 MoveList Chess::getLegalMoves(){
     MoveList pseudoList = getPseudoLegalMoves();
     MoveList legalMoves;
-    Piece currentColor = colorTurn;
-
+    
+    Square kingSquare = (Square)__builtin_ctzll(currentBoard[colorTurn + W_KING]);
     // Makes the move and checks if the king is attack to get the legal moves.
     for(Move m: pseudoList){
-        makeMove(m);
-        Square kingSquare = (Square)generator.bitScanForward(currentBoard[currentColor + W_KING]);
-        if(attacksToSquare(kingSquare, currentColor) == 0) {
+        if(isLegal(m, kingSquare)) {
             legalMoves.add(m);
         }
-        undoMove();
     }
 
     if(legalMoves.count == 0){

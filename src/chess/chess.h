@@ -58,6 +58,7 @@ public:
     uint64_t attacksToSquare(Square sq, Piece color);
     inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
     MoveList getPseudoLegalMoves();
+    bool isLegal(Move move, Square kingSquare);
     MoveList getLegalMoves();
     std::vector<Piece> getCurrentBoard(); // To do remove, pieceAt already covers this
     Piece getSquareColor(int sq);
