@@ -39,6 +39,8 @@ public:
         1152921504606846976U     // Black king
     };
     uint64_t occupiedBoard = 18446462598732906495U;
+    // For faster lookup while move generating
+    Piece pieceAt[64]; 
 
     // Tell us about castling rights and who is going to move next
     int gameState;
@@ -54,10 +56,10 @@ public:
     void makeMove(Move pieceMove);
     void undoMove();
     uint64_t attacksToSquare(Square sq, Piece color);
-    void getMovesFromBB(std::vector<Move>& moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
-    std::vector<Move> getPseudoLegalMoves();
-    std::vector<Move> getLegalMoves();
-    std::vector<Piece> getCurrentBoard();
+    inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
+    MoveList getPseudoLegalMoves();
+    MoveList getLegalMoves();
+    std::vector<Piece> getCurrentBoard(); // To do remove, pieceAt already covers this
     Piece getSquareColor(int sq);
     std::string getFen();
     #ifdef __EMSCRIPTEN__

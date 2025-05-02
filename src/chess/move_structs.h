@@ -2,6 +2,7 @@
 #define __MOVE_STRUCTS__
 
 #include <string>
+#include <array>
 
 enum Piece{
     WHITE,      BLACK,
@@ -48,6 +49,26 @@ typedef struct Move{
     Square castleTo;
     int moveState = 0;
 }Move;
+
+constexpr size_t MAX_MOVES = 256;
+
+typedef struct MoveList {
+    std::array<Move, MAX_MOVES> moves;
+    size_t count = 0;
+
+    void add(const Move& move) {
+        if (count < MAX_MOVES)
+            moves[count++] = move;
+    }
+
+    void clear() { count = 0; }
+
+    Move* begin() { return moves.data(); }
+    Move* end() { return moves.data() + count; }
+
+    const Move* begin() const { return moves.data(); }
+    const Move* end() const { return moves.data() + count; }
+} MoveList;
 
 char pieceToString(Piece piece);
 std::string squareToString(Square square);

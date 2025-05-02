@@ -1,5 +1,6 @@
 #include "minimax.h"
 #include <chrono>
+#include <algorithm>
 
 Minimax::Minimax() {
     std::vector<int> wpawnScore{
@@ -196,7 +197,13 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     steps += 1;
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    std::vector<Move> moveList = chess->getLegalMoves();
+    MoveList moveList = chess->getLegalMoves();
+    std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
+        bool killerMove = a.cPieceType != UNKNOWN && b.cPieceType == UNKNOWN;
+        bool stateChange = a.moveState > 0 && b.moveState == 0;
+
+        return killerMove || stateChange;
+    });
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
     moveGenTime += ms_int.count();
@@ -204,7 +211,7 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     if (depth == 0 || (chess->gameState & GAME_OVER)) {
         t1 = std::chrono::high_resolution_clock::now();
         Evaluation eval;
-        eval.result = heuristicEval(chess, moveList.size());
+        eval.result = heuristicEval(chess, moveList.count);
         t2 = std::chrono::high_resolution_clock::now();
         ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
         heuristicTime += ms_int.count();

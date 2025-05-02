@@ -37,7 +37,7 @@ Chess chess;
 Minimax mm;
 Evaluation evaluation;
 std::vector<Piece> board = chess.getCurrentBoard();
-std::vector<Move> moves = chess.getLegalMoves();
+MoveList moves = chess.getLegalMoves();
 int selectedPiece = -1;
 bool selectedMoves[64] = { 0 };
 
@@ -357,13 +357,15 @@ void updateEval() {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(chessboardCopy, 5);
+	evaluation = mm.searchABPruning(chessboardCopy, 6);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+	std::cout << evaluation.steps / (ms_int.count()) << " knodes\n";
 	std::cout << ms_int.count() << "ms\n";
 	std::cout << evaluation.steps << " steps\n";
-	std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
+	// std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
 	std::cout << evaluation.moveGenTime / 1000 << "ms move gen\n\n";
 
 	updatingEval = false;
