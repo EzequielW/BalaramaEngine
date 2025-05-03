@@ -65,6 +65,11 @@ typedef struct MoveList {
             moves[count++] = move;
     }
 
+    void pop() {
+        if (count > 0)
+            count--;
+    }
+
     void clear() { count = 0; }
 
     Move* begin() { return moves.data(); }

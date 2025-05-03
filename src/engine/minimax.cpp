@@ -158,7 +158,7 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {
 		piecesChange = false;
         for (int i = (int)W_PAWN; i < (int)UNKNOWN; i++) {
             if (boardCopy[(Piece)i] > 0) {
-                int square = chess->generator.bitScanForward(boardCopy[(Piece)i]);
+                int square = __builtin_ctzll(boardCopy[(Piece)i]);
                 nodeScore[(Piece)i] += pieceScores[(Piece)i][square];
                 boardCopy[(Piece)i] ^= (temp << square);
                 piecesChange = true;

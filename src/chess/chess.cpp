@@ -1,10 +1,11 @@
 #include "chess.h"
 
 Chess::Chess(){
+    moveHistory = {};
     gameState = CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8;
     enpassant = -1;
     halfMoves = 0;
-    totalMoves = 1;
+    totalMoves = 0;
     colorTurn = WHITE;
     oppColor = BLACK;
 
@@ -26,13 +27,7 @@ Chess::Chess(){
 
 // Returns the origin of the attackers to a square.
 uint64_t Chess::attacksToSquare(Square sq, Piece color){
-    Piece attColor;
-    if(color == WHITE){
-        attColor = BLACK;
-    }
-    else{
-        attColor = WHITE;
-    }
+    Piece attColor = (color == WHITE) ? BLACK : WHITE;
 
     uint64_t bishopBlockers = generator.bishopMoves[sq] & occupiedBoard;
     uint64_t rookBlockers = generator.rookMoves[sq] & occupiedBoard;
@@ -104,7 +99,8 @@ void Chess::makeMove(Move pieceMove){
         currentBoard[pieceMove.cPieceType] ^= toBB;
     }
 
-    moveHistory.push_back(pieceMove);
+    moveHistory[totalMoves] = pieceMove;
+    totalMoves++;
 
     Piece temp = colorTurn;
     colorTurn = oppColor;
@@ -117,7 +113,7 @@ void Chess::makeMove(Move pieceMove){
 void Chess::undoMove(){
     uint64_t i = 1;
 
-    Move pieceMove = moveHistory.back();
+    Move pieceMove = moveHistory[totalMoves - 1];
 
     uint64_t fromBB = (i << pieceMove.squareFrom);
     uint64_t toBB = (i << pieceMove.squareTo);
@@ -147,7 +143,7 @@ void Chess::undoMove(){
         gameState &= ~GAME_OVER;
     }
 
-    moveHistory.pop_back();
+    totalMoves--;
 
     Piece temp = colorTurn;
     colorTurn = oppColor;

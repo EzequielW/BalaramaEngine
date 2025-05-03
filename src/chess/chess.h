@@ -19,7 +19,7 @@ const int CASTLE_H8 = (1 << 4);
 class Chess{
 public:
     Generator generator;
-    std::vector<Move> moveHistory;
+    std::array<Move, 512> moveHistory = {};
 
     // Array representing the current state of the board
     uint64_t currentBoard[14] = {

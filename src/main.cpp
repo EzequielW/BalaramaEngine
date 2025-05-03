@@ -365,7 +365,7 @@ void updateEval() {
 	std::cout << evaluation.steps / (ms_int.count()) << " knodes\n";
 	std::cout << ms_int.count() << "ms\n";
 	std::cout << evaluation.steps << " steps\n";
-	// std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
+	std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
 	std::cout << evaluation.moveGenTime / 1000 << "ms move gen\n\n";
 
 	updatingEval = false;
