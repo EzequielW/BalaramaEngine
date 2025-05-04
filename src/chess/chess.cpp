@@ -415,10 +415,45 @@ MoveList Chess::getLegalMoves(){
 
     if(legalMoves.count == 0){
         gameState |= GAME_OVER;
-        moveHistory.back().moveState |= GAME_OVER;
+        moveHistory[totalMoves - 1].moveState |= GAME_OVER;
     }
 
     return legalMoves;
+}
+
+PerftResults Chess::perft(int depth) {
+    PerftResults results;
+
+    MoveList moves = getLegalMoves();
+
+    if (gameState & GAME_OVER) {
+        if(moveHistory[totalMoves  - 1].getFlags() == CAPTURE_MOVE) {
+            results.captures++;
+        }
+
+        // std::cout << "\nCheckmate: " + getFen() + "\n"<< std::endl;
+
+        results.totalCount++;
+        results.checkmates++;
+        return results;
+    }
+
+    if(depth == 0) {
+        if(moveHistory[totalMoves - 1].getFlags() == CAPTURE_MOVE) {
+            results.captures++;
+        }
+
+        results.totalCount++;
+        return results;
+    }
+
+    for(Move m : moves) {
+        makeMove(m);
+        results.add(perft(depth - 1));
+        undoMove();
+    }
+
+    return results;
 }
 
 // Returns a vector of size 64 representing the board. Is no used by the engine so it can be created in real time.

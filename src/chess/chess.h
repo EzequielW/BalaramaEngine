@@ -10,6 +10,20 @@
 #include "generator.h"
 #include "move_structs.h"
 
+typedef struct PerftResults {
+    long long totalCount = 0;
+    long captures = 0;
+    long checks = 0;
+    long checkmates = 0;
+
+    void add(PerftResults other) {
+        totalCount += other.totalCount;
+        captures += other.captures;
+        checks += other.checks;
+        checkmates += other.checkmates;
+    }
+} PerftResults;
+
 class Chess{
 public:
     Generator generator;
@@ -38,7 +52,7 @@ public:
     Piece pieceAt[64]; 
 
     // Tell us about castling rights and who is going to move next
-    int gameState;
+    uint8_t gameState;
     int enpassant;
     // Moves since capture or pawn move
     int halfMoves;
@@ -55,6 +69,7 @@ public:
     MoveList getPseudoLegalMoves();
     bool isLegal(Move move, Square kingSquare);
     MoveList getLegalMoves();
+    PerftResults perft(int depth);
     std::vector<Piece> getCurrentBoard(); // To do remove, pieceAt already covers this
     Piece getSquareColor(int sq);
     std::string getFen();

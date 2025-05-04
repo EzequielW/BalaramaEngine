@@ -24,6 +24,7 @@ void handleClick(void);
 void draw_circle(SDL_Point center, int radius, SDL_Color color);
 void updateEvalTexts(void);
 void updateEval(void);
+void doPerft(void);
 
 typedef struct {
 	SDL_Renderer * renderer;
@@ -90,6 +91,8 @@ int main(int argc, char* argv[]) {
 	updateEvalTexts();
 	std::thread evalThread(updateEval);
 	evalThread.detach();
+	// std::thread perftThread(doPerft);
+	// perftThread.detach();
 
 	bool run = true;
 	while (run) {
@@ -370,4 +373,15 @@ void updateEval() {
 
 	updatingEval = false;
 	evalCounter++;
+}
+
+void doPerft() {
+	std::cout << "\nCalculating perft performance...\n" << std::endl;
+	int depth = 5;
+	Chess chessboardCopy = chess;
+	PerftResults results = chessboardCopy.perft(depth);
+	std::cout << "\nPerft results depth: " + std::to_string(depth) + "\n" << std::endl;
+	std::cout << "\nNodes: " + std::to_string(results.totalCount) + "\n" << std::endl;
+	std::cout << "\nCaptures: " + std::to_string(results.captures) + "\n" << std::endl;
+	std::cout << "\nCheckmates: " + std::to_string(results.checkmates) + "\n" << std::endl;
 }

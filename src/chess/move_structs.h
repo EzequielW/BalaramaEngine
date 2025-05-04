@@ -72,11 +72,11 @@ enum MoveFlag : uint16_t {
     QUEEN_PROMOTION_C = 15
 };
 
-const int GAME_OVER = 1;
-const int CASTLE_A1 = (1 << 1);
-const int CASTLE_H1 = (1 << 2);
-const int CASTLE_A8 = (1 << 3);
-const int CASTLE_H8 = (1 << 4);
+const uint8_t GAME_OVER = 1;
+const uint8_t CASTLE_A1 = (1 << 1);
+const uint8_t CASTLE_H1 = (1 << 2);
+const uint8_t CASTLE_A8 = (1 << 3);
+const uint8_t CASTLE_H8 = (1 << 4);
 
 // Moves are represented by 16 usigned integers, 12 bits for square from/to, and 4 bits for flags
 typedef struct Move {
