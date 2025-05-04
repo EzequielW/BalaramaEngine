@@ -243,15 +243,15 @@ void handleClick(void) {
 				selectedMoves[i] = false;
 			}
 			for (Move m : moves) {
-				if ((int)m.squareFrom == clickedSquare) {
-					selectedMoves[(int)m.squareTo] = true;
+				if ((int)m.getFrom() == clickedSquare) {
+					selectedMoves[(int)m.getTo()] = true;
 				}
 			}
 		}
 		// If its not an owned piece check if its a valid move
 		else if(selectedPiece >= 0){
 			for (Move m : moves) {
-				if (m.squareFrom == selectedPiece && m.squareTo == (Square)clickedSquare) {
+				if (m.getFrom() == selectedPiece && m.getTo() == (Square)clickedSquare) {
 					/*std::string pieces[(int)UNKNOWN + 1] = {
 						"WHITE",      "BLACK",
 						"W_PAWN",     "B_PAWN",
@@ -303,9 +303,9 @@ void draw_circle(SDL_Point center, int radius, SDL_Color color)
 void updateEvalTexts() {
 	char evalBuffer[10];
 	snprintf(evalBuffer, sizeof evalBuffer, "%03.1f", evaluation.result);
-	const char* moveBuffer = SquareText[evaluation.move.squareTo];
+	const char* moveBuffer = SquareText[evaluation.move.getTo()];
 	char movePiece[5] = {};
-	switch (evaluation.move.pieceType) {
+	switch (chess.pieceAt[evaluation.move.getFrom()]) {
 	case W_BISHOP:
 	case B_BISHOP:
 		movePiece[0] = 'B';
@@ -330,7 +330,7 @@ void updateEvalTexts() {
 		break;
 	}
 
-	if (evaluation.move.cPieceType != UNKNOWN) {
+	if (evaluation.move.getFlags() == CAPTURE_MOVE) {
 		movePiece[1] = 'x';
 	}
 

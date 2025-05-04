@@ -1,6 +1,7 @@
 #ifndef __MOVE_STRUCTS__
 #define __MOVE_STRUCTS__
 
+#include <cstdint>
 #include <string>
 #include <array>
 
@@ -37,22 +38,68 @@ enum Direction{
     SOUTH_WEST
 };
 
-typedef struct Move{
-    Square squareFrom;
-    Square squareTo;
-    Piece pieceColor;
-    Piece pieceType;
-    Piece cPieceColor;
-    Piece cPieceType;
-    Piece promotion;
-    Square castleFrom;
-    Square castleTo;
-    int moveState = 0;
+// typedef struct Move{
+//     Square squareFrom;
+//     Square squareTo;
+//     Piece pieceColor;
+//     Piece pieceType;
+//     Piece cPieceColor;
+//     Piece cPieceType;
+//     Piece promotion;
+//     Square castleFrom;
+//     Square castleTo;
+//     int moveState = 0;
 
-    bool isCastling() {
-        return castleTo != A1;
-    };
-}Move;
+//     bool isCastling() {
+//         return castleTo != A1;
+//     };
+// }Move;
+
+enum MoveFlag : uint16_t {
+    QUIET_MOVE = 0,
+    DOUBLE_PAWN = 1,
+    KING_CASTLE = 2,
+    QUEEN_CASTLE = 3,
+    CAPTURE_MOVE = 4,
+    EP_CAPTURE = 5,
+    KNIGHT_PROMOTION = 8,
+    BISHOP_PROMOTION = 9,
+    ROOK_PROMOTION = 10,
+    QUEEN_PROMOTION = 11,
+    KNIGHT_PROMOTION_C = 12,
+    BISHOP_PROMOTION_C = 13,
+    ROOK_PROMOTION_C = 14,
+    QUEEN_PROMOTION_C = 15
+};
+
+const int GAME_OVER = 1;
+const int CASTLE_A1 = (1 << 1);
+const int CASTLE_H1 = (1 << 2);
+const int CASTLE_A8 = (1 << 3);
+const int CASTLE_H8 = (1 << 4);
+
+// Moves are represented by 16 usigned integers, 12 bits for square from/to, and 4 bits for flags
+typedef struct Move {
+    uint16_t move;
+    uint8_t moveState;
+    Piece captured;
+
+    Move() {
+        move = 0;
+        moveState = 0;
+        captured = UNKNOWN;
+    }
+
+    Move(Square from, Square to, uint16_t flags) {
+        move = ((flags & 0xf) << 12) | ((from & 0x3f) << 6) | (to & 0x3f);
+        moveState = 0;
+        captured = UNKNOWN;
+    }
+
+    uint16_t getTo() const {return move & 0x3f;}
+    uint16_t getFrom() const {return (move >> 6) & 0x3f;}
+    uint16_t getFlags() const {return (move >> 12) & 0x0f;}
+} Move;
 
 constexpr size_t MAX_MOVES = 256;
 

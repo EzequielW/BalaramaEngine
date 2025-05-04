@@ -10,16 +10,11 @@
 #include "generator.h"
 #include "move_structs.h"
 
-const int GAME_OVER = 1;
-const int CASTLE_A1 = (1 << 1);
-const int CASTLE_H1 = (1 << 2);
-const int CASTLE_A8 = (1 << 3);
-const int CASTLE_H8 = (1 << 4);
-
 class Chess{
 public:
     Generator generator;
     std::array<Move, 512> moveHistory = {};
+    // std::array<uint8_t, 512> stateHistory = { CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8 };
 
     // Array representing the current state of the board
     uint64_t currentBoard[14] = {

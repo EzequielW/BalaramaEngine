@@ -199,7 +199,7 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     auto t1 = std::chrono::high_resolution_clock::now();
     MoveList moveList = chess->getLegalMoves();
     std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
-        bool killerMove = a.cPieceType != UNKNOWN && b.cPieceType == UNKNOWN;
+        bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() == QUIET_MOVE;
         bool stateChange = a.moveState > 0 && b.moveState == 0;
 
         return killerMove || stateChange;
