@@ -65,7 +65,7 @@ public:
     void makeMove(Move pieceMove);
     void undoMove();
     uint64_t attacksToSquare(Square sq, Piece color);
-    inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture);
+    inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, bool capture);
     MoveList getPseudoLegalMoves();
     bool isLegal(Move move, Square kingSquare);
     MoveList getLegalMoves();

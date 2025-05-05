@@ -305,7 +305,7 @@ void draw_circle(SDL_Point center, int radius, SDL_Color color)
 
 void updateEvalTexts() {
 	char evalBuffer[10];
-	snprintf(evalBuffer, sizeof evalBuffer, "%03.1f", evaluation.result);
+	snprintf(evalBuffer, sizeof evalBuffer, "%03.2f", evaluation.result);
 	const char* moveBuffer = SquareText[evaluation.move.getTo()];
 	char movePiece[5] = {};
 	switch (chess.pieceAt[evaluation.move.getFrom()]) {
@@ -370,6 +370,16 @@ void updateEval() {
 	std::cout << evaluation.steps << " steps\n";
 	std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
 	std::cout << evaluation.moveGenTime / 1000 << "ms move gen\n\n";
+
+	// for(Move m : evaluation.moveTree) {
+	// 	if(m.move == 0) {
+	// 		continue;
+	// 	}
+	// 	Square from = (Square)m.getFrom();
+	// 	Square to = (Square)m.getTo();
+
+	// 	std::cout << "\nMove from: " + squareToString(from) + ", to: " + squareToString(to) << std::endl;
+	// }
 
 	updatingEval = false;
 	evalCounter++;

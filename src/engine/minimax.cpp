@@ -7,7 +7,7 @@ Minimax::Minimax() {
         0,  0,  0,  0,  0,  0,  0,  0,
         5, 10, 10,-20,-20, 10, 10,  5,
         5, -5,-10,  0,  0,-10, -5,  5,
-        0,  0,  0, 20, 20,  0,  0,  0,
+        0,  0,  0, 120, 120,  0,  0,  0,
         5,  5, 10, 25, 25, 10,  5,  5,
         10, 10, 20, 30, 30, 20, 10, 10,
         0, 50, 50, 50, 50, 50, 50, 50,
@@ -74,7 +74,7 @@ Minimax::Minimax() {
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
 			int index = i * 8 + j;
-			int reverseIndex = (7 - i) * 8 + j;
+			int reverseIndex = (7 - i) * 8 + (7 - j);
 
 			bpawnScore[index] = wpawnScore[reverseIndex];
 			bknightScore[index] = wknightScore[reverseIndex];
@@ -99,7 +99,7 @@ Minimax::Minimax() {
     std::copy(std::begin(bkingScore), std::end(bkingScore), std::begin(pieceScores[B_KING]));
 }
 
-float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {
+float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
 
@@ -177,6 +177,38 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess, size_t totalMoves) {
     return nodeEvaluation;
 }
 
+float Minimax::quiescenceSearch(std::shared_ptr<Chess> chess, float alpha, float beta, int depth) {
+    MoveList moves = chess->getLegalMoves();
+
+    float bestValue = heuristicEval(chess);
+    alpha = std::max(alpha, bestValue);
+
+    if(alpha >= beta || depth == 0 || (chess->gameState & GAME_OVER)) {
+        return bestValue;
+    }
+
+    for(Move move : moves) {
+        chess->makeMove(move);
+        Square kingSq = (Square)(chess->colorTurn + W_KING);
+        bool isCheck = chess->attacksToSquare(kingSq, chess->colorTurn);
+        if(move.getFlags() == CAPTURE_MOVE || isCheck) {
+            float value = -1 * quiescenceSearch(chess, -beta, -alpha, depth - 1);
+            chess->undoMove();
+            bestValue = std::max(bestValue, value);
+            alpha = std::max(alpha, bestValue);
+        }
+        else {
+            chess->undoMove();
+        }
+
+        if(alpha >= beta) {
+            break;
+        }
+    }
+
+    return bestValue;
+}
+
 Evaluation Minimax::searchABPruning(Chess chess, int depth) {
     int steps = 0;
     long long heuristicTime = 0;
@@ -199,10 +231,9 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     auto t1 = std::chrono::high_resolution_clock::now();
     MoveList moveList = chess->getLegalMoves();
     std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
-        bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() == QUIET_MOVE;
-        bool stateChange = a.moveState > 0 && b.moveState == 0;
+        bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() != CAPTURE_MOVE;
 
-        return killerMove || stateChange;
+        return killerMove;
     });
     auto t2 = std::chrono::high_resolution_clock::now();
     auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
@@ -210,8 +241,17 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
 
     if (depth == 0 || (chess->gameState & GAME_OVER)) {
         t1 = std::chrono::high_resolution_clock::now();
+        uint8_t flag = chess->moveHistory[chess->totalMoves - 1].getFlags();
+
         Evaluation eval;
-        eval.result = heuristicEval(chess, moveList.count);
+        eval.result = heuristicEval(chess);
+        // if(flag == CAPTURE_MOVE) {
+        //     eval.result = quiescenceSearch(chess, alpha, beta, 2);
+        // }
+        // else {
+        //     eval.result = heuristicEval(chess);
+        // }
+        
         t2 = std::chrono::high_resolution_clock::now();
         ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
         heuristicTime += ms_int.count();
@@ -227,14 +267,22 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
             chess->makeMove(m);
             currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
 
-            if (currentEval > maxEval.result) {
+            if (currentEval >= maxEval.result) {
                 maxEval.result = currentEval;
                 maxEval.move = m;
-                alpha = std::max(alpha, maxEval.result);
-                if (alpha >= beta) {
+                // maxEval.moveTree[depth] = currentEval.moveTree[depth - 1];
+                
+                // // Non leaf node
+                // if(currentEval.move.move != 0) {
+                //     std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(maxEval.moveTree));
+                // }
+                // maxEval.moveTree[depth] = m;
+
+                if (maxEval.result >= beta) {
                     chess->undoMove();
                     break;
                 }
+                alpha = std::max(alpha, maxEval.result);
             }
 
             chess->undoMove();
@@ -251,14 +299,22 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
             chess->makeMove(m);
             currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
 
-            if (currentEval < minEval.result) {
+            if (currentEval <= minEval.result) {
                 minEval.result = currentEval;
                 minEval.move = m;
-                beta = std::min(beta, minEval.result);
-                if (alpha >= beta) {
+                // minEval.moveTree[depth] = currentEval.moveTree[depth - 1];
+                
+                // // Non leaf node
+                // if(currentEval.move.move != 0) {
+                //     std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(minEval.moveTree));
+                // }
+                // minEval.moveTree[depth] = m;
+                
+                if (minEval.result <= alpha) {
                     chess->undoMove();
                     break;
                 }
+                beta = std::min(beta, minEval.result);
             }
 
             chess->undoMove();

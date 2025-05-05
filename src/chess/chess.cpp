@@ -86,8 +86,9 @@ void Chess::makeMove(Move pieceMove){
         }
     }
     else if(pieceType == (colorTurn + W_KING)){
-        pieceMove.moveState = gameState & (colorTurn == WHITE ? (CASTLE_A1 | CASTLE_H1) : (CASTLE_A8 | CASTLE_H8));
-        gameState &= colorTurn == WHITE ? ~(CASTLE_A1 | CASTLE_H1) : ~(CASTLE_A8 | CASTLE_H8);
+        uint8_t newState = colorTurn == WHITE ? (CASTLE_A1 | CASTLE_H1) : (CASTLE_A8 | CASTLE_H8);
+        pieceMove.moveState = gameState & newState;
+        gameState &= ~newState;
     }
 
     // Check if its castle and move the rook
@@ -116,8 +117,9 @@ void Chess::makeMove(Move pieceMove){
             }
         }
 
-        toBB = (i << rookFrom);
-        fromToBB = (i << rookTo) ^ toBB;
+        fromBB = (i << rookFrom);
+        toBB = (i << rookTo);
+        fromToBB = fromBB ^ toBB;
         currentBoard[colorTurn] ^= fromToBB;
         currentBoard[colorTurn + W_ROOK] ^= fromToBB;
         pieceAt[rookFrom] = UNKNOWN;
@@ -127,6 +129,28 @@ void Chess::makeMove(Move pieceMove){
     else if(flags == CAPTURE_MOVE){
         currentBoard[oppColor] ^= toBB;
         currentBoard[pieceMove.captured] ^= toBB;
+
+        if(pieceMove.captured == (oppColor + W_ROOK)) {
+            switch(to){
+                case A1:
+                    pieceMove.moveState = gameState & CASTLE_A1;
+                    gameState &= ~CASTLE_A1;
+                    break;
+                case H1:
+                    pieceMove.moveState = gameState & CASTLE_H1;
+                    gameState &= ~CASTLE_H1;
+                    break;
+                case A8:
+                    pieceMove.moveState = gameState & CASTLE_A8;
+                    gameState &= ~CASTLE_A8;
+                    break;
+                case H8:
+                    pieceMove.moveState = gameState & CASTLE_H8;
+                    gameState &= ~CASTLE_H8;
+                    break;
+                default: break;
+            }
+        }
     }
 
     moveHistory[totalMoves] = pieceMove;
@@ -141,7 +165,7 @@ void Chess::makeMove(Move pieceMove){
 
 // Reverse the last move made. Used to check if the king is capture after a move, to known that is illegal.
 void Chess::undoMove(){
-    uint64_t i = 1ULL;
+    uint64_t i = 1;
 
     Move pieceMove = moveHistory[totalMoves - 1];
 
@@ -183,8 +207,9 @@ void Chess::undoMove(){
             }
         }
 
-        toBB = (i << rookFrom);
-        fromToBB = (i << rookTo) ^ toBB;
+        fromBB = (i << rookFrom);
+        toBB = (i << rookTo);
+        fromToBB = fromBB ^ toBB;
         currentBoard[oppColor] ^= fromToBB;
         currentBoard[oppColor + W_ROOK] ^= fromToBB;
         pieceAt[rookFrom] = (Piece)(oppColor + W_ROOK);
@@ -212,7 +237,7 @@ void Chess::undoMove(){
 }
 
 // Generates a list of moves for a given piece moveboard.
-inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, Piece pieceColor, Piece pieceType, bool capture){
+inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, bool capture){
     uint16_t flags = capture ? CAPTURE_MOVE : QUIET_MOVE;
 
     while(bitboard > 0){
@@ -305,11 +330,11 @@ MoveList Chess::getPseudoLegalMoves(){
         captures &= currentBoard[oppColor];
 
         if (moves > 0) {
-            getMovesFromBB(moveList, moves, (Square)sq, colorTurn, pieceType, false);
+            getMovesFromBB(moveList, moves, (Square)sq, false);
         }
 
         if (captures > 0) {
-            getMovesFromBB(moveList, captures, (Square)sq, colorTurn, pieceType, true);
+            getMovesFromBB(moveList, captures, (Square)sq, true);
         }
     }
 

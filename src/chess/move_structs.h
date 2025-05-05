@@ -16,7 +16,7 @@ enum Piece{
     UNKNOWN
 };
 
-enum Square{
+enum Square : uint8_t {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -55,7 +55,7 @@ enum Direction{
 //     };
 // }Move;
 
-enum MoveFlag : uint16_t {
+enum MoveFlag : uint8_t {
     QUIET_MOVE = 0,
     DOUBLE_PAWN = 1,
     KING_CASTLE = 2,
@@ -80,25 +80,21 @@ const uint8_t CASTLE_H8 = (1 << 4);
 
 // Moves are represented by 16 usigned integers, 12 bits for square from/to, and 4 bits for flags
 typedef struct Move {
-    uint16_t move;
-    uint8_t moveState;
-    Piece captured;
+    uint16_t move = 0;
+    uint8_t moveState = 0;
+    Piece captured = UNKNOWN;
 
     Move() {
         move = 0;
-        moveState = 0;
-        captured = UNKNOWN;
     }
 
-    Move(Square from, Square to, uint16_t flags) {
+    Move(Square from, Square to, uint8_t flags) {
         move = ((flags & 0xf) << 12) | ((from & 0x3f) << 6) | (to & 0x3f);
-        moveState = 0;
-        captured = UNKNOWN;
     }
 
-    uint16_t getTo() const {return move & 0x3f;}
-    uint16_t getFrom() const {return (move >> 6) & 0x3f;}
-    uint16_t getFlags() const {return (move >> 12) & 0x0f;}
+    uint8_t getTo() const {return move & 0x3f;}
+    uint8_t getFrom() const {return (move >> 6) & 0x3f;}
+    uint8_t getFlags() const {return (move >> 12) & 0x0f;}
 } Move;
 
 constexpr size_t MAX_MOVES = 256;
