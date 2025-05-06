@@ -7,7 +7,7 @@ Minimax::Minimax() {
         0,  0,  0,  0,  0,  0,  0,  0,
         5, 10, 10,-20,-20, 10, 10,  5,
         5, -5,-10,  0,  0,-10, -5,  5,
-        0,  0,  0, 120, 120,  0,  0,  0,
+        0,  0,  0, 50, 50,  0,  0,  0,
         5,  5, 10, 25, 25, 10,  5,  5,
         10, 10, 20, 30, 30, 20, 10, 10,
         0, 50, 50, 50, 50, 50, 50, 50,
@@ -100,10 +100,15 @@ Minimax::Minimax() {
 }
 
 float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
+    auto t1 = std::chrono::high_resolution_clock::now();
+
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
 
     if (chess->gameState & GAME_OVER) {
+        // auto t2 = std::chrono::high_resolution_clock::now();
+        // auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+        // heuristicTime += ms_int.count();
         if (chess->colorTurn == WHITE) {
             return -INFINITE_EVAL;
         }
@@ -145,7 +150,7 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
 	int bqueenSize = chess->generator.bitCountSet(chess->currentBoard[B_QUEEN]);
 
     nodeEvaluation += 1000 * (wqueenSize - bqueenSize) + 525 * (wrookSize - brookSize) + 350 * (wbishopSize - bbishopSize)
-        + 350 * (wknightSize - bknightSize) + (wpawnSize - bpawnSize);
+        + 350 * (wknightSize - bknightSize) + 100 * (wpawnSize - bpawnSize);
 
 
 	uint64_t boardCopy[14];
@@ -174,87 +179,104 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
     nodeEvaluation += nodeScore[W_KING] - nodeScore[B_KING];
     nodeEvaluation /= 100;
 
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    heuristicTime += ms_int.count();
+
     return nodeEvaluation;
 }
 
 float Minimax::quiescenceSearch(std::shared_ptr<Chess> chess, float alpha, float beta, int depth) {
+    steps += 1;
     MoveList moves = chess->getLegalMoves();
 
     float bestValue = heuristicEval(chess);
-    alpha = std::max(alpha, bestValue);
 
-    if(alpha >= beta || depth == 0 || (chess->gameState & GAME_OVER)) {
+    if(depth == 0 || (chess->gameState & GAME_OVER)) {
         return bestValue;
     }
 
+    if(chess->colorTurn == WHITE) {
+        if(bestValue >= beta) {
+            return bestValue;
+        }
+        alpha = std::max(alpha, bestValue);
+    } 
+    else {
+        if(bestValue <= alpha) {
+            return bestValue;
+        }
+        beta = std::min(beta, bestValue);
+    }
+    
+
     for(Move move : moves) {
-        chess->makeMove(move);
         Square kingSq = (Square)(chess->colorTurn + W_KING);
         bool isCheck = chess->attacksToSquare(kingSq, chess->colorTurn);
         if(move.getFlags() == CAPTURE_MOVE || isCheck) {
-            float value = -1 * quiescenceSearch(chess, -beta, -alpha, depth - 1);
+            chess->makeMove(move);
+            float value = quiescenceSearch(chess, alpha, beta, depth - 1);
             chess->undoMove();
-            bestValue = std::max(bestValue, value);
-            alpha = std::max(alpha, bestValue);
-        }
-        else {
-            chess->undoMove();
-        }
-
-        if(alpha >= beta) {
-            break;
+            
+            if(chess->colorTurn == WHITE) {
+                if(value >= beta) {
+                    return value;
+                }
+                alpha = std::max(alpha, value);
+            } 
+            else {
+                if(value <= alpha) {
+                    return value;
+                }
+                beta = std::min(beta, value);
+            }
         }
     }
 
     return bestValue;
 }
 
-Evaluation Minimax::searchABPruning(Chess chess, int depth) {
-    int steps = 0;
-    long long heuristicTime = 0;
-    long long moveGenTime = 0;
+FinalEvaluation Minimax::searchABPruning(Chess chess, int depth) {
+    steps = 0;
+    heuristicTime = 0;
+    chess.moveGenTime = 0;
     float alpha = -INFINITE_EVAL;
     float beta = INFINITE_EVAL;
+
     std::shared_ptr<Chess> chessRef = std::make_shared<Chess>(chess);
 
-    Evaluation evaluation = searchABPruningExec(chessRef, depth, alpha, beta, steps, heuristicTime, moveGenTime);
+    Evaluation evaluation = searchABPruningExec(chessRef, depth, alpha, beta);
 
-    evaluation.steps = steps;
-    evaluation.heuristicTime = heuristicTime;
-    evaluation.moveGenTime = moveGenTime;
-    return evaluation;
+    FinalEvaluation finalEvaluation;
+    finalEvaluation.result = evaluation.result;
+    finalEvaluation.move = evaluation.move;
+    finalEvaluation.steps = steps;
+    finalEvaluation.heuristicTime = heuristicTime;
+    finalEvaluation.moveGenTime = chessRef->moveGenTime;
+    return finalEvaluation;
 }
 
-Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth, float alpha, float beta, int& steps, long long& heuristicTime, long long& moveGenTime) {
+Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth, float alpha, float beta) {
     steps += 1;
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    MoveList moveList = chess->getLegalMoves();
-    std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
-        bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() != CAPTURE_MOVE;
-
-        return killerMove;
-    });
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    moveGenTime += ms_int.count();
-
-    if (depth == 0 || (chess->gameState & GAME_OVER)) {
-        t1 = std::chrono::high_resolution_clock::now();
-        uint8_t flag = chess->moveHistory[chess->totalMoves - 1].getFlags();
-
+    if (depth == 0) {
+        chess->getLegalMoves();
         Evaluation eval;
         eval.result = heuristicEval(chess);
-        // if(flag == CAPTURE_MOVE) {
-        //     eval.result = quiescenceSearch(chess, alpha, beta, 2);
-        // }
-        // else {
-        //     eval.result = heuristicEval(chess);
-        // }
-        
-        t2 = std::chrono::high_resolution_clock::now();
-        ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-        heuristicTime += ms_int.count();
+        // eval.result = quiescenceSearch(chess, alpha, beta, 4);
+        return eval;
+    }
+
+    MoveList moveList = chess->getLegalMoves();
+    // std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
+    //     bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() != CAPTURE_MOVE;
+
+    //     return killerMove;
+    // });
+
+    if(chess->gameState & GAME_OVER) {
+        Evaluation eval;
+        eval.result = heuristicEval(chess);
         return eval;
     }
     
@@ -265,7 +287,7 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta).result;
 
             if (currentEval >= maxEval.result) {
                 maxEval.result = currentEval;
@@ -297,7 +319,7 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta, steps, heuristicTime, moveGenTime).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta).result;
 
             if (currentEval <= minEval.result) {
                 minEval.result = currentEval;

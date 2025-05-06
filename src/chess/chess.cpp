@@ -1,13 +1,13 @@
 #include "chess.h"
 
 Chess::Chess(){
-    moveHistory = {};
     gameState = CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8;
     enpassant = -1;
     halfMoves = 0;
     totalMoves = 0;
     colorTurn = WHITE;
     oppColor = BLACK;
+    moveGenTime = 0;
 
     // Initialize piece lookup array
     for (int sq = 0; sq < 64; ++sq) {
@@ -48,11 +48,11 @@ uint64_t Chess::attacksToSquare(Square sq, Piece color){
 void Chess::makeMove(Move pieceMove){
     uint64_t i = 1;
 
-    uint16_t from = pieceMove.getFrom();
-    uint16_t to = pieceMove.getTo();
-    uint16_t flags = pieceMove.getFlags();
+    uint8_t from = pieceMove.getFrom();
+    uint8_t to = pieceMove.getTo();
+    uint8_t flags = pieceMove.getFlags();
     Piece pieceType = pieceAt[from];
-    pieceMove.captured = pieceAt[to];
+    captureHistory[totalMoves] = pieceAt[to];
 
     // Update piece and color bitboards
     uint64_t fromBB = (i << from);
@@ -67,19 +67,19 @@ void Chess::makeMove(Move pieceMove){
     if(pieceType == (colorTurn + W_ROOK)){
         switch(from){
             case A1:
-                pieceMove.moveState = gameState & CASTLE_A1;
+                stateHistory[totalMoves] = gameState & CASTLE_A1;
                 gameState &= ~CASTLE_A1;
                 break;
             case H1:
-                pieceMove.moveState = gameState & CASTLE_H1;
+                stateHistory[totalMoves] = gameState & CASTLE_H1;
                 gameState &= ~CASTLE_H1;
                 break;
             case A8:
-                pieceMove.moveState = gameState & CASTLE_A8;
+                stateHistory[totalMoves] = gameState & CASTLE_A8;
                 gameState &= ~CASTLE_A8;
                 break;
             case H8:
-                pieceMove.moveState = gameState & CASTLE_H8;
+                stateHistory[totalMoves] = gameState & CASTLE_H8;
                 gameState &= ~CASTLE_H8;
                 break;
             default: break;
@@ -87,70 +87,83 @@ void Chess::makeMove(Move pieceMove){
     }
     else if(pieceType == (colorTurn + W_KING)){
         uint8_t newState = colorTurn == WHITE ? (CASTLE_A1 | CASTLE_H1) : (CASTLE_A8 | CASTLE_H8);
-        pieceMove.moveState = gameState & newState;
+        stateHistory[totalMoves] = gameState & newState;
         gameState &= ~newState;
     }
 
-    // Check if its castle and move the rook
-    if((flags == KING_CASTLE) || (flags == QUEEN_CASTLE)){
-        Square rookFrom = A1;
-        Square rookTo = A1;
+    switch(flags) {
+        case KING_CASTLE: {
+            Square rookFrom = A1;
+            Square rookTo = A1;
 
-        if(colorTurn == WHITE) {
-            if(flags == KING_CASTLE) {
+            if(colorTurn == WHITE) {
                 rookFrom = H1;
                 rookTo = F1;
             }
             else {
-                rookFrom = A1;
-                rookTo = D1;
-            }
-        }
-        else {
-            if(flags == KING_CASTLE) {
                 rookFrom = H8;
                 rookTo = F8;
+            }
+
+            fromBB = (i << rookFrom);
+            toBB = (i << rookTo);
+            fromToBB = fromBB ^ toBB;
+            currentBoard[colorTurn] ^= fromToBB;
+            currentBoard[colorTurn + W_ROOK] ^= fromToBB;
+            pieceAt[rookFrom] = UNKNOWN;
+            pieceAt[rookTo] = (Piece)(colorTurn + W_ROOK);
+            break;
+        }
+        case QUEEN_CASTLE: {
+            Square rookFrom = A1;
+            Square rookTo = A1;
+
+            if(colorTurn == WHITE) {
+                rookFrom = A1;
+                rookTo = D1;
             }
             else {
                 rookFrom = A8;
                 rookTo = D8;
             }
+
+            fromBB = (i << rookFrom);
+            toBB = (i << rookTo);
+            fromToBB = fromBB ^ toBB;
+            currentBoard[colorTurn] ^= fromToBB;
+            currentBoard[colorTurn + W_ROOK] ^= fromToBB;
+            pieceAt[rookFrom] = UNKNOWN;
+            pieceAt[rookTo] = (Piece)(colorTurn + W_ROOK);
+            break;
         }
+        case CAPTURE_MOVE: {
+            currentBoard[oppColor] ^= toBB;
+            currentBoard[captureHistory[totalMoves]] ^= toBB;
 
-        fromBB = (i << rookFrom);
-        toBB = (i << rookTo);
-        fromToBB = fromBB ^ toBB;
-        currentBoard[colorTurn] ^= fromToBB;
-        currentBoard[colorTurn + W_ROOK] ^= fromToBB;
-        pieceAt[rookFrom] = UNKNOWN;
-        pieceAt[rookTo] = (Piece)(colorTurn + W_ROOK);
-    }
-    // Check for capture and update the bitboards
-    else if(flags == CAPTURE_MOVE){
-        currentBoard[oppColor] ^= toBB;
-        currentBoard[pieceMove.captured] ^= toBB;
-
-        if(pieceMove.captured == (oppColor + W_ROOK)) {
-            switch(to){
-                case A1:
-                    pieceMove.moveState = gameState & CASTLE_A1;
-                    gameState &= ~CASTLE_A1;
-                    break;
-                case H1:
-                    pieceMove.moveState = gameState & CASTLE_H1;
-                    gameState &= ~CASTLE_H1;
-                    break;
-                case A8:
-                    pieceMove.moveState = gameState & CASTLE_A8;
-                    gameState &= ~CASTLE_A8;
-                    break;
-                case H8:
-                    pieceMove.moveState = gameState & CASTLE_H8;
-                    gameState &= ~CASTLE_H8;
-                    break;
-                default: break;
+            if(captureHistory[totalMoves] == (oppColor + W_ROOK)) {
+                switch(to){
+                    case A1:
+                        stateHistory[totalMoves] = gameState & CASTLE_A1;
+                        gameState &= ~CASTLE_A1;
+                        break;
+                    case H1:
+                        stateHistory[totalMoves] = gameState & CASTLE_H1;
+                        gameState &= ~CASTLE_H1;
+                        break;
+                    case A8:
+                        stateHistory[totalMoves] = gameState & CASTLE_A8;
+                        gameState &= ~CASTLE_A8;
+                        break;
+                    case H8:
+                        stateHistory[totalMoves] = gameState & CASTLE_H8;
+                        gameState &= ~CASTLE_H8;
+                        break;
+                    default: break;
+                }
             }
+            break;
         }
+        default: break;
     }
 
     moveHistory[totalMoves] = pieceMove;
@@ -169,9 +182,9 @@ void Chess::undoMove(){
 
     Move pieceMove = moveHistory[totalMoves - 1];
 
-    uint16_t from = pieceMove.getFrom();
-    uint16_t to = pieceMove.getTo();
-    uint16_t flags = pieceMove.getFlags();
+    uint8_t from = pieceMove.getFrom();
+    uint8_t to = pieceMove.getTo();
+    uint8_t flags = pieceMove.getFlags();
     Piece pieceType = pieceAt[to];
 
     uint64_t fromBB = (i << from);
@@ -182,48 +195,63 @@ void Chess::undoMove(){
     pieceAt[from] = pieceType;
     pieceAt[to] = UNKNOWN;
 
-    if((flags == KING_CASTLE) || (flags == QUEEN_CASTLE)){
-        Square rookFrom = A1;
-        Square rookTo = A1;
+    switch(flags) {
+        case KING_CASTLE: {
+            Square rookFrom = A1;
+            Square rookTo = A1;
 
-        if(oppColor == WHITE) {
-            if(flags == KING_CASTLE) {
+            if(oppColor == WHITE) {
                 rookFrom = H1;
                 rookTo = F1;
             }
             else {
-                rookFrom = A1;
-                rookTo = D1;
-            }
-        }
-        else {
-            if(flags == KING_CASTLE) {
                 rookFrom = H8;
                 rookTo = F8;
+            }
+
+            fromBB = (i << rookFrom);
+            toBB = (i << rookTo);
+            fromToBB = fromBB ^ toBB;
+            currentBoard[oppColor] ^= fromToBB;
+            currentBoard[oppColor + W_ROOK] ^= fromToBB;
+            pieceAt[rookFrom] = (Piece)(oppColor + W_ROOK);
+            pieceAt[rookTo] = UNKNOWN;
+            break;
+        }
+        case QUEEN_CASTLE: {
+            Square rookFrom = A1;
+            Square rookTo = A1;
+
+            if(oppColor == WHITE) {
+                rookFrom = A1;
+                rookTo = D1;
             }
             else {
                 rookFrom = A8;
                 rookTo = D8;
             }
-        }
 
-        fromBB = (i << rookFrom);
-        toBB = (i << rookTo);
-        fromToBB = fromBB ^ toBB;
-        currentBoard[oppColor] ^= fromToBB;
-        currentBoard[oppColor + W_ROOK] ^= fromToBB;
-        pieceAt[rookFrom] = (Piece)(oppColor + W_ROOK);
-        pieceAt[rookTo] = UNKNOWN;
-    }
-    else if(flags == CAPTURE_MOVE){
-        currentBoard[colorTurn] ^= toBB;
-        currentBoard[pieceMove.captured] ^= toBB;
-        pieceAt[to] = pieceMove.captured;
+            fromBB = (i << rookFrom);
+            toBB = (i << rookTo);
+            fromToBB = fromBB ^ toBB;
+            currentBoard[oppColor] ^= fromToBB;
+            currentBoard[oppColor + W_ROOK] ^= fromToBB;
+            pieceAt[rookFrom] = (Piece)(oppColor + W_ROOK);
+            pieceAt[rookTo] = UNKNOWN;
+            break;
+        }
+        case CAPTURE_MOVE: {
+            currentBoard[colorTurn] ^= toBB;
+            currentBoard[captureHistory[totalMoves - 1]] ^= toBB;
+            pieceAt[to] = captureHistory[totalMoves - 1];
+            break;
+        }
+        default: break;
     }
 
     // We recover the state
-    if(pieceMove.moveState > 0){
-        gameState |= pieceMove.moveState;
+    if(stateHistory[totalMoves - 1] > 0){
+        gameState |= stateHistory[totalMoves - 1];
         gameState &= ~GAME_OVER;
     }
 
@@ -237,14 +265,12 @@ void Chess::undoMove(){
 }
 
 // Generates a list of moves for a given piece moveboard.
-inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, bool capture){
-    uint16_t flags = capture ? CAPTURE_MOVE : QUIET_MOVE;
-
+inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, uint8_t flag){
     while(bitboard > 0){
         Square squareTo = (Square)__builtin_ctzll(bitboard);
         bitboard &= bitboard - 1;
 
-        Move newMove(squareFrom, squareTo, flags);
+        Move newMove(squareFrom, squareTo, flag);
         moveList.add(newMove);
     }
 }
@@ -253,26 +279,7 @@ inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square 
 MoveList Chess::getPseudoLegalMoves(){
     uint64_t playerBoard = currentBoard[colorTurn];
     MoveList moveList;
-    
     Square kingSquare = A1;
-
-    bool correctColor[15] = {
-        colorTurn == WHITE, // WHITE
-        colorTurn == BLACK, // BLACK
-        colorTurn == WHITE, // W_PAWN
-        colorTurn == BLACK, // B_PAWN
-        colorTurn == WHITE, // W_KNIGHT
-        colorTurn == BLACK, // B_KNIGHT
-        colorTurn == WHITE, // W_BISHOP
-        colorTurn == BLACK, // B_BISHOP
-        colorTurn == WHITE, // W_ROOK
-        colorTurn == BLACK, // B_ROOK
-        colorTurn == WHITE, // W_QUEEN
-        colorTurn == BLACK, // B_QUEEN
-        colorTurn == WHITE, // W_KING
-        colorTurn == BLACK, // B_KING
-        false  // UNKNOWN
-    };
 
     int sq;
     while(playerBoard){
@@ -282,8 +289,6 @@ MoveList Chess::getPseudoLegalMoves(){
         uint64_t moves = 0;
         uint64_t captures = 0;
         Piece pieceType = pieceAt[sq];
-
-        if(!correctColor[pieceType]) continue;
 
         switch(pieceType) {
             case W_PAWN: case B_PAWN: {
@@ -330,11 +335,11 @@ MoveList Chess::getPseudoLegalMoves(){
         captures &= currentBoard[oppColor];
 
         if (moves > 0) {
-            getMovesFromBB(moveList, moves, (Square)sq, false);
+            getMovesFromBB(moveList, moves, (Square)sq, QUIET_MOVE);
         }
 
         if (captures > 0) {
-            getMovesFromBB(moveList, captures, (Square)sq, true);
+            getMovesFromBB(moveList, captures, (Square)sq, CAPTURE_MOVE);
         }
     }
 
@@ -342,24 +347,20 @@ MoveList Chess::getPseudoLegalMoves(){
     if(colorTurn == WHITE) {
         if(gameState & CASTLE_A1){
             Move newMove(E1, C1, QUEEN_CASTLE);
-            // Move castle = {E1, C1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, A1, D1};
             moveList.add(newMove);
         }
         if(gameState & CASTLE_H1){
             Move newMove(E1, G1, KING_CASTLE);
-            // Move castle = {E1, G1, WHITE, W_KING, WHITE, W_ROOK, UNKNOWN, H1, F1};
             moveList.add(newMove);
         }
     }
     else {
         if(gameState & CASTLE_A8){
             Move newMove(E8, C8, QUEEN_CASTLE);
-            // Move castle = {E8, C8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, A8, D8};
             moveList.add(newMove);
         }
         if(gameState & CASTLE_H8){
             Move newMove(E8, G8, KING_CASTLE);
-            // Move castle = {E8, G8, BLACK, B_KING, BLACK, B_ROOK, UNKNOWN, H8, F8};
             moveList.add(newMove);
         }
     }
@@ -368,13 +369,14 @@ MoveList Chess::getPseudoLegalMoves(){
 }
 
 bool Chess::isLegal(Move move, Square kingSquare) {
-    uint16_t flags = move.getFlags();
-    uint16_t from = move.getFrom();
-    uint16_t to = move.getTo();
+    uint8_t flags = move.getFlags();
+    uint8_t from = move.getFrom();
+    uint8_t to = move.getTo();
 
     if((flags == KING_CASTLE) || (flags == QUEEN_CASTLE)) {
+        if(attacksToSquare(kingSquare, colorTurn)) return false;
+        
         bool pathClear = false;
-
         switch(to){
             case C1: {
                 bool path = (occupiedBoard & 14) == 0;
@@ -399,20 +401,11 @@ bool Chess::isLegal(Move move, Square kingSquare) {
             default: break;
         }
 
-        if(!pathClear) return false;
-        if(attacksToSquare(kingSquare, colorTurn)) return false;
-
-        makeMove(move);
-        Square newKingSquare = (Square)__builtin_ctzll(currentBoard[oppColor + W_KING]);
-        bool kingSafe = attacksToSquare(newKingSquare, oppColor) == 0;
-        undoMove();
-
-        return kingSafe;
+        return pathClear;
     }
     else if(pieceAt[from] == (Piece)(colorTurn + W_KING)) {
         makeMove(move);
-        Square newKingSquare = (Square)__builtin_ctzll(currentBoard[oppColor + W_KING]);
-        bool kingSafe = attacksToSquare(newKingSquare, oppColor) == 0;
+        bool kingSafe = attacksToSquare((Square)move.getTo(), oppColor) == 0;
         undoMove();
 
         return kingSafe;
@@ -427,6 +420,8 @@ bool Chess::isLegal(Move move, Square kingSquare) {
 }
 
 MoveList Chess::getLegalMoves(){
+    auto t1 = std::chrono::high_resolution_clock::now();
+    
     MoveList pseudoList = getPseudoLegalMoves();
     MoveList legalMoves;
     
@@ -440,8 +435,12 @@ MoveList Chess::getLegalMoves(){
 
     if(legalMoves.count == 0){
         gameState |= GAME_OVER;
-        moveHistory[totalMoves - 1].moveState |= GAME_OVER;
+        stateHistory[totalMoves - 1] |= GAME_OVER;
     }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    moveGenTime += ms_int.count();
 
     return legalMoves;
 }

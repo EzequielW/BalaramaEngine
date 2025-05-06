@@ -36,7 +36,7 @@ App app;
 std::map<Piece, SDL_Texture*> pieceImage;
 Chess chess;
 Minimax mm;
-Evaluation evaluation;
+FinalEvaluation evaluation;
 std::vector<Piece> board = chess.getCurrentBoard();
 MoveList moves = chess.getLegalMoves();
 int selectedPiece = -1;
@@ -360,7 +360,7 @@ void updateEval() {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(chessboardCopy, 6);
+	evaluation = mm.searchABPruning(chessboardCopy, 7);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);

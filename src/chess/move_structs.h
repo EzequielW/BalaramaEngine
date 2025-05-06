@@ -5,7 +5,7 @@
 #include <string>
 #include <array>
 
-enum Piece{
+enum Piece: uint8_t {
     WHITE,      BLACK,
     W_PAWN,     B_PAWN,
     W_KNIGHT,   B_KNIGHT,
@@ -38,23 +38,6 @@ enum Direction{
     SOUTH_WEST
 };
 
-// typedef struct Move{
-//     Square squareFrom;
-//     Square squareTo;
-//     Piece pieceColor;
-//     Piece pieceType;
-//     Piece cPieceColor;
-//     Piece cPieceType;
-//     Piece promotion;
-//     Square castleFrom;
-//     Square castleTo;
-//     int moveState = 0;
-
-//     bool isCastling() {
-//         return castleTo != A1;
-//     };
-// }Move;
-
 enum MoveFlag : uint8_t {
     QUIET_MOVE = 0,
     DOUBLE_PAWN = 1,
@@ -81,8 +64,6 @@ const uint8_t CASTLE_H8 = (1 << 4);
 // Moves are represented by 16 usigned integers, 12 bits for square from/to, and 4 bits for flags
 typedef struct Move {
     uint16_t move = 0;
-    uint8_t moveState = 0;
-    Piece captured = UNKNOWN;
 
     Move() {
         move = 0;

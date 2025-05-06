@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <chrono>
 #ifdef __EMSCRIPTEN__
 #include <emscripten/bind.h>
 #endif
@@ -27,8 +28,9 @@ typedef struct PerftResults {
 class Chess{
 public:
     Generator generator;
-    std::array<Move, 512> moveHistory = {};
-    // std::array<uint8_t, 512> stateHistory = { CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8 };
+    Move moveHistory[512] = {};
+    uint8_t stateHistory[512] = { 0 };
+    Piece captureHistory[512] = { UNKNOWN };
 
     // Array representing the current state of the board
     uint64_t currentBoard[14] = {
@@ -61,11 +63,13 @@ public:
     Piece colorTurn;
     Piece oppColor;
 
+    long long moveGenTime = 0;
+
     Chess();
     void makeMove(Move pieceMove);
     void undoMove();
     uint64_t attacksToSquare(Square sq, Piece color);
-    inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, bool capture);
+    inline void getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, uint8_t flag);
     MoveList getPseudoLegalMoves();
     bool isLegal(Move move, Square kingSquare);
     MoveList getLegalMoves();
