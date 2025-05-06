@@ -360,7 +360,7 @@ void updateEval() {
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	Chess chessboardCopy = chess;
-	evaluation = mm.searchABPruning(chessboardCopy, 7);
+	evaluation = mm.searchABPruning(chessboardCopy, 4);
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
@@ -389,9 +389,13 @@ void doPerft() {
 	std::cout << "\nCalculating perft performance...\n" << std::endl;
 	int depth = 5;
 	Chess chessboardCopy = chess;
+	chessboardCopy.moveGenTime = 0;
+
 	PerftResults results = chessboardCopy.perft(depth);
+
 	std::cout << "\nPerft results depth: " + std::to_string(depth) + "\n" << std::endl;
 	std::cout << "\nNodes: " + std::to_string(results.totalCount) + "\n" << std::endl;
 	std::cout << "\nCaptures: " + std::to_string(results.captures) + "\n" << std::endl;
 	std::cout << "\nCheckmates: " + std::to_string(results.checkmates) + "\n" << std::endl;
+	std::cout << results.totalCount * 1000 / chessboardCopy.moveGenTime << " knodes\n";
 }

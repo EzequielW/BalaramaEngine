@@ -260,19 +260,18 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     steps += 1;
 
     if (depth == 0) {
-        chess->getLegalMoves();
         Evaluation eval;
-        eval.result = heuristicEval(chess);
-        // eval.result = quiescenceSearch(chess, alpha, beta, 4);
+        // eval.result = heuristicEval(chess);
+        eval.result = quiescenceSearch(chess, alpha, beta, 5);
         return eval;
     }
 
     MoveList moveList = chess->getLegalMoves();
-    // std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
-    //     bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() != CAPTURE_MOVE;
+    std::sort(moveList.begin(), moveList.end(), [](const Move& a, const Move& b) {
+        bool killerMove = a.getFlags() == CAPTURE_MOVE && b.getFlags() != CAPTURE_MOVE;
 
-    //     return killerMove;
-    // });
+        return killerMove;
+    });
 
     if(chess->gameState & GAME_OVER) {
         Evaluation eval;

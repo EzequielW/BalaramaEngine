@@ -279,7 +279,6 @@ inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square 
 MoveList Chess::getPseudoLegalMoves(){
     uint64_t playerBoard = currentBoard[colorTurn];
     MoveList moveList;
-    Square kingSquare = A1;
 
     int sq;
     while(playerBoard){
@@ -325,7 +324,6 @@ MoveList Chess::getPseudoLegalMoves(){
             case W_KING: case B_KING: {
                 moves = generator.kingMoves[sq];
                 captures = moves;
-                kingSquare = (Square)sq;
                 break;
             }
             default: break;
