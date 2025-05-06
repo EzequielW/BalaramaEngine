@@ -1,1 +1,1 @@
-emcc src/chess/chess.cpp src/chess/generator.cpp src/chess/move_structs.cpp src/bindings.cpp src/engine/minimax.cpp -o webui/public/balarama.js -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=web -lembind -O3 -s ASSERTIONS=1 -s TOTAL_MEMORY=536870912
+emcc src/chess/move_structs.cpp src/chess/generator.cpp src/chess/chess.cpp src/engine/minimax.cpp src/bindings.cpp -o webui/public/balarama.js -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=web -lembind -O3 -s ASSERTIONS=1 -s TOTAL_MEMORY=536870912

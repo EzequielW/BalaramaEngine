@@ -90,3 +90,12 @@ std::string squareToString(Square square) {
         default: return "unknown";
     }
 }
+
+JSMove getJSMove(Move move) {
+    JSMove jsMove;
+    jsMove.from = (Square)move.getFrom();
+    jsMove.to = (Square)move.getTo();
+    jsMove.flags = (MoveFlag)move.getFlags();
+
+    return jsMove;
+}

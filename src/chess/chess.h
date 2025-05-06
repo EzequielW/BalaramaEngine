@@ -77,8 +77,8 @@ public:
     std::vector<Piece> getCurrentBoard(); // To do remove, pieceAt already covers this
     Piece getSquareColor(int sq);
     std::string getFen();
+    Piece getPieceAt(Square from);
     #ifdef __EMSCRIPTEN__
-    emscripten::val getBoardAsJsArray();
     emscripten::val getLegalMovesAsJsArray();
     #endif
 };

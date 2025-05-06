@@ -620,26 +620,18 @@ std::string Chess::getFen() {
     return fen;
 }
 
-#ifdef __EMSCRIPTEN__
-emscripten::val Chess::getBoardAsJsArray() {
-    std::vector<Piece> board = getCurrentBoard();
-    emscripten::val jsArray = emscripten::val::array();
-
-    // Convert std::vector<Piece> to a JavaScript array
-    for (size_t i = 0; i < board.size(); ++i) {
-        jsArray.call<void>("push", emscripten::val(board[i]));  // Push each piece
-    }
-
-    return jsArray;
+Piece Chess::getPieceAt(Square from) {
+    return pieceAt[from];
 }
 
+#ifdef __EMSCRIPTEN__
 emscripten::val Chess::getLegalMovesAsJsArray() {
-    std::vector<Move> legalMoves = getLegalMoves();
+    MoveList legalMoves = getLegalMoves();
     emscripten::val jsArray = emscripten::val::array();
 
     // Convert std::vector<Move> to a JavaScript array
-    for (size_t i = 0; i < legalMoves.size(); ++i) {
-        jsArray.call<void>("push", emscripten::val(legalMoves[i]));  // Push each move
+    for (size_t i = 0; i < legalMoves.count; ++i) {
+        jsArray.call<void>("push", emscripten::val(legalMoves.moves[i]));  // Push each move
     }
 
     return jsArray;

@@ -106,4 +106,13 @@ typedef struct MoveList {
 char pieceToString(Piece piece);
 std::string squareToString(Square square);
 
+// For wasm bindings
+typedef struct JSMove {
+    Square from;
+    Square to;
+    MoveFlag flags;
+} JSMove;
+
+JSMove getJSMove(Move move);
+
 #endif // __MOVE_STRUCTS__

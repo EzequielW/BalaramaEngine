@@ -4,15 +4,17 @@ let Module = null
 let Chess = null
 let Engine = null
 let legalMoves = null
-const depth = 6
+const depth = 4
 
 const getEvaluation = () => {
     const evaluation = Engine.searchABPruning(Chess, depth)
-    let pieceChar = String.fromCharCode(Module.pieceToString(evaluation.move.pieceType))
+    const move = Module.getJSMove(evaluation.move)
+    const pieceType = Chess.getPieceAt(move.from)
+    let pieceChar = String.fromCharCode(Module.pieceToString(pieceType))
     pieceChar = pieceChar === 'p' || pieceChar === 'P' ? '' : pieceChar
     const bestMove = {
-        from: Module.squareToString(evaluation.move.squareFrom),
-        to: Module.squareToString(evaluation.move.squareTo),
+        from: Module.squareToString(move.from),
+        to: Module.squareToString(move.to),
         piece: pieceChar.toUpperCase()
     }
 
@@ -46,36 +48,25 @@ self.onmessage = async function (e) {
     if (newMove && legalMoves) {
         newMove.castleFrom = 'a1'
         newMove.castleTo = 'a1'
+        let flag = Module.MoveFlag.QUIET_MOVE
 
         // for rook movement during castle
         if(newMove.flags === 'k') {
-            newMove.castleFrom = newMove.color === 'w' ? 'h1' : 'h8'
-            newMove.castleTo = newMove.color === 'w' ? 'f1' : 'f8'
-            newMove.captured = 'r'
+            flag = Module.MoveFlag.KING_CASTLE
         }
         else if(newMove.flags === 'q') {  
-            newMove.castleFrom = newMove.color === 'w' ? 'a1' : 'a8'
-            newMove.castleTo = newMove.color === 'w' ? 'd1' : 'd8'
-            newMove.captured = 'r'
+            flag = Module.MoveFlag.QUEEN_CASTLE
+        }
+        else if(newMove.captured) {
+            flag = Module.MoveFlag.CAPTURE_MOVE
         }
 
         const validMove = legalMoves.find(m => {
-            const from = Module.squareToString(m.squareFrom)
-            const to = Module.squareToString(m.squareTo)
-            const castleFrom = Module.squareToString(m.castleFrom)
-            const castleTo = Module.squareToString(m.castleTo)
-            const pieceCaptured = String.fromCharCode(Module.pieceToString(m.cPieceType)).toLowerCase()
-            const isCapture = pieceCaptured === '-' ? true : pieceCaptured === newMove.captured
-
-            // console.log('---------')
-            // console.log('from: ', from)
-            // console.log('to: ', to)
-            // console.log('castleFrom: ', castleFrom)
-            // console.log('castleTo: ', castleTo)
-            // console.log('pieceCaptured: ', pieceCaptured)
+            const jsMove = Module.getJSMove(m)
+            const from = Module.squareToString(jsMove.from)
+            const to = Module.squareToString(jsMove.to)
     
-            return from === newMove.from && to === newMove.to && isCapture 
-                && castleFrom === newMove.castleFrom && castleTo === newMove.castleTo
+            return from === newMove.from && to === newMove.to && flag == jsMove.flags
         })
     
         // console.log('newMove: ', validMove)

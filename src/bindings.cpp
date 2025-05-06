@@ -97,17 +97,35 @@ EMSCRIPTEN_BINDINGS(square_enum) {
 }
 
 EMSCRIPTEN_BINDINGS(move_class) {
-    value_object<Move>("Move")
-        .field("squareFrom", &Move::squareFrom)
-        .field("squareTo", &Move::squareTo)
-        .field("pieceColor", &Move::pieceColor)
-        .field("pieceType", &Move::pieceType)
-        .field("cPieceColor", &Move::cPieceColor)
-        .field("cPieceType", &Move::cPieceType)
-        .field("promotion", &Move::promotion)
-        .field("castleFrom", &Move::castleFrom)
-        .field("castleTo", &Move::castleTo)
-        .field("moveState", &Move::moveState);
+    enum_<MoveFlag>("MoveFlag")
+        .value("QUIET_MOVE", MoveFlag::QUIET_MOVE)
+        .value("DOUBLE_PAWN", MoveFlag::DOUBLE_PAWN)
+        .value("KING_CASTLE", MoveFlag::KING_CASTLE)
+        .value("QUEEN_CASTLE", MoveFlag::QUEEN_CASTLE)
+        .value("CAPTURE_MOVE", MoveFlag::CAPTURE_MOVE)
+        .value("EP_CAPTURE", MoveFlag::EP_CAPTURE)
+        .value("KNIGHT_PROMOTION", MoveFlag::KNIGHT_PROMOTION)
+        .value("BISHOP_PROMOTION", MoveFlag::BISHOP_PROMOTION)
+        .value("ROOK_PROMOTION", MoveFlag::ROOK_PROMOTION)
+        .value("QUEEN_PROMOTION", MoveFlag::QUEEN_PROMOTION)
+        .value("KNIGHT_PROMOTION_C", MoveFlag::KNIGHT_PROMOTION_C)
+        .value("BISHOP_PROMOTION_C", MoveFlag::BISHOP_PROMOTION_C)
+        .value("ROOK_PROMOTION_C", MoveFlag::ROOK_PROMOTION_C)
+        .value("QUEEN_PROMOTION_C", MoveFlag::QUEEN_PROMOTION_C);
+
+    class_<Move>("Move")
+        .constructor<>()
+        .constructor<Square, Square, uint8_t>()
+        .function("getTo", &Move::getTo)
+        .function("getFrom", &Move::getFrom)
+        .function("getFlags", &Move::getFlags);
+
+    value_object<JSMove>("JSMove")
+        .field("from", &JSMove::from)
+        .field("to", &JSMove::to)
+        .field("flags", &JSMove::flags);
+
+    function("getJSMove", &getJSMove);
 }
 
 EMSCRIPTEN_BINDINGS(chess_engine_module) {
@@ -115,22 +133,19 @@ EMSCRIPTEN_BINDINGS(chess_engine_module) {
         .constructor<>()
         .function("makeMove", &Chess::makeMove)
         .function("getFen", &Chess::getFen)
-        .function("getBoardAsJsArray", &Chess::getBoardAsJsArray)
+        .function("getPieceAt", &Chess::getPieceAt)
         .function("getLegalMovesAsJsArray", &Chess::getLegalMovesAsJsArray);
-
-    register_vector<Piece>("VectorPiece");
-    register_vector<Move>("VectorMove");
 
     class_<Minimax>("Minimax")
         .constructor<>()
         .function("searchABPruning", &Minimax::searchABPruning);
     
-    value_object<Evaluation>("Evaluation")
-        .field("result", &Evaluation::result)
-        .field("move", &Evaluation::move)
-        .field("steps", &Evaluation::steps)
-        .field("heuristicTime", &Evaluation::heuristicTime)
-        .field("moveGenTime", &Evaluation::moveGenTime);
+    value_object<FinalEvaluation>("FinalEvaluation")
+        .field("result", &FinalEvaluation::result)
+        .field("move", &FinalEvaluation::move)
+        .field("steps", &FinalEvaluation::steps)
+        .field("heuristicTime", &FinalEvaluation::heuristicTime)
+        .field("moveGenTime", &FinalEvaluation::moveGenTime);
 }
 
 #endif
