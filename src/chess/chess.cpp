@@ -163,6 +163,46 @@ void Chess::makeMove(Move pieceMove){
             }
             break;
         }
+        case KNIGHT_PROMOTION: case BISHOP_PROMOTION: case ROOK_PROMOTION: case QUEEN_PROMOTION: {
+            Piece promotionPiece = (Piece)(colorTurn + flagToPiece[flags - FLAG_OFFSET]);
+            currentBoard[pieceType] ^= toBB; // Remove pawn
+            currentBoard[promotionPiece] ^= toBB; // Add piece promoted
+            pieceAt[to] = promotionPiece; // At piece type for faster lookup
+            break;
+        }
+        case KNIGHT_PROMOTION_C: case BISHOP_PROMOTION_C: case ROOK_PROMOTION_C: case QUEEN_PROMOTION_C: {
+            Piece promotionPiece = (Piece)(colorTurn + flagToPiece[flags - FLAG_OFFSET]);
+            currentBoard[pieceType] ^= toBB;
+            currentBoard[promotionPiece] ^= toBB;
+            pieceAt[to] = promotionPiece;
+            
+            currentBoard[oppColor] ^= toBB;
+            currentBoard[captureHistory[totalMoves]] ^= toBB;
+
+            // If we captured a rook we disable castling rights
+            if(captureHistory[totalMoves] == (oppColor + W_ROOK)) {
+                switch(to){
+                    case A1:
+                        stateHistory[totalMoves] = gameState & CASTLE_A1;
+                        gameState &= ~CASTLE_A1;
+                        break;
+                    case H1:
+                        stateHistory[totalMoves] = gameState & CASTLE_H1;
+                        gameState &= ~CASTLE_H1;
+                        break;
+                    case A8:
+                        stateHistory[totalMoves] = gameState & CASTLE_A8;
+                        gameState &= ~CASTLE_A8;
+                        break;
+                    case H8:
+                        stateHistory[totalMoves] = gameState & CASTLE_H8;
+                        gameState &= ~CASTLE_H8;
+                        break;
+                    default: break;
+                }
+            }
+            break;
+        }
         default: break;
     }
 
@@ -191,12 +231,13 @@ void Chess::undoMove(){
     uint64_t toBB = (i << to);
     uint64_t fromToBB = fromBB ^ toBB;
     currentBoard[oppColor] ^= fromToBB;
-    currentBoard[pieceType] ^= fromToBB;
     pieceAt[from] = pieceType;
     pieceAt[to] = UNKNOWN;
 
     switch(flags) {
         case KING_CASTLE: {
+            currentBoard[pieceType] ^= fromToBB;
+
             Square rookFrom = A1;
             Square rookTo = A1;
 
@@ -219,6 +260,8 @@ void Chess::undoMove(){
             break;
         }
         case QUEEN_CASTLE: {
+            currentBoard[pieceType] ^= fromToBB;
+
             Square rookFrom = A1;
             Square rookTo = A1;
 
@@ -240,7 +283,28 @@ void Chess::undoMove(){
             pieceAt[rookTo] = UNKNOWN;
             break;
         }
+        case QUIET_MOVE: {
+            currentBoard[pieceType] ^= fromToBB;
+            break;
+        }
         case CAPTURE_MOVE: {
+            currentBoard[pieceType] ^= fromToBB;
+            currentBoard[colorTurn] ^= toBB;
+            currentBoard[captureHistory[totalMoves - 1]] ^= toBB;
+            pieceAt[to] = captureHistory[totalMoves - 1];
+            break;
+        }
+        case KNIGHT_PROMOTION: case BISHOP_PROMOTION: case ROOK_PROMOTION: case QUEEN_PROMOTION: {
+            currentBoard[pieceType] ^= toBB;
+            currentBoard[oppColor + W_PAWN] ^= fromBB;
+            pieceAt[from] = (Piece)(oppColor + W_PAWN);
+            break;
+        }
+        case KNIGHT_PROMOTION_C: case BISHOP_PROMOTION_C: case ROOK_PROMOTION_C: case QUEEN_PROMOTION_C: {
+            currentBoard[pieceType] ^= toBB;
+            currentBoard[oppColor + W_PAWN] ^= fromBB;
+            pieceAt[from] = (Piece)(oppColor + W_PAWN);     
+            
             currentBoard[colorTurn] ^= toBB;
             currentBoard[captureHistory[totalMoves - 1]] ^= toBB;
             pieceAt[to] = captureHistory[totalMoves - 1];
@@ -266,12 +330,50 @@ void Chess::undoMove(){
 
 // Generates a list of moves for a given piece moveboard.
 inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square squareFrom, uint8_t flag){
-    while(bitboard > 0){
-        Square squareTo = (Square)__builtin_ctzll(bitboard);
-        bitboard &= bitboard - 1;
-
-        Move newMove(squareFrom, squareTo, flag);
-        moveList.add(newMove);
+    switch(flag) {
+        case KNIGHT_PROMOTION: {
+            while(bitboard > 0){
+                Square squareTo = (Square)__builtin_ctzll(bitboard);
+                bitboard &= bitboard - 1;
+    
+                Move knightPromotion(squareFrom, squareTo, KNIGHT_PROMOTION);
+                Move bishopPromotion(squareFrom, squareTo, BISHOP_PROMOTION);
+                Move rookPromotion(squareFrom, squareTo, ROOK_PROMOTION);
+                Move queenPromotion(squareFrom, squareTo, QUEEN_PROMOTION);
+                moveList.add(knightPromotion);
+                moveList.add(bishopPromotion);
+                moveList.add(rookPromotion);
+                moveList.add(queenPromotion);
+            }
+            break;
+        }
+        case KNIGHT_PROMOTION_C: {
+            while(bitboard > 0){
+                Square squareTo = (Square)__builtin_ctzll(bitboard);
+                bitboard &= bitboard - 1;
+    
+                Move knightPromotion(squareFrom, squareTo, KNIGHT_PROMOTION_C);
+                Move bishopPromotion(squareFrom, squareTo, BISHOP_PROMOTION_C);
+                Move rookPromotion(squareFrom, squareTo, ROOK_PROMOTION_C);
+                Move queenPromotion(squareFrom, squareTo, QUEEN_PROMOTION_C);
+                moveList.add(knightPromotion);
+                moveList.add(bishopPromotion);
+                moveList.add(rookPromotion);
+                moveList.add(queenPromotion);
+            }
+            break;
+        }
+        case QUIET_MOVE: case CAPTURE_MOVE: {
+            while(bitboard > 0){
+                Square squareTo = (Square)__builtin_ctzll(bitboard);
+                bitboard &= bitboard - 1;
+    
+                Move newMove(squareFrom, squareTo, flag);
+                moveList.add(newMove);
+            }
+            break;
+        }
+        default: break;
     }
 }
 
@@ -287,6 +389,9 @@ MoveList Chess::getPseudoLegalMoves(){
 
         uint64_t moves = 0;
         uint64_t captures = 0;
+        uint64_t promotions = 0;
+        uint64_t capturePromotions = 0;
+        uint64_t promotionRow = colorTurn == WHITE ? LAST_ROW : FIRST_ROW;
         Piece pieceType = pieceAt[sq];
 
         switch(pieceType) {
@@ -332,12 +437,31 @@ MoveList Chess::getPseudoLegalMoves(){
         moves &= ~occupiedBoard;
         captures &= currentBoard[oppColor];
 
+        if(pieceType == W_PAWN || pieceType == B_PAWN) {
+            promotions = promotionRow & moves;
+            capturePromotions = promotionRow & captures;
+            moves &= ~promotionRow;
+            captures &= ~promotionRow;
+        }
+        else {
+            promotions = 0;
+            capturePromotions = 0;
+        }
+
         if (moves > 0) {
             getMovesFromBB(moveList, moves, (Square)sq, QUIET_MOVE);
         }
 
         if (captures > 0) {
             getMovesFromBB(moveList, captures, (Square)sq, CAPTURE_MOVE);
+        }
+
+        if (promotions > 0) {
+            getMovesFromBB(moveList, promotions, (Square)sq, KNIGHT_PROMOTION);
+        }
+
+        if (capturePromotions > 0) {
+            getMovesFromBB(moveList, capturePromotions, (Square)sq, KNIGHT_PROMOTION_C);
         }
     }
 
@@ -418,7 +542,7 @@ bool Chess::isLegal(Move move, Square kingSquare) {
 }
 
 MoveList Chess::getLegalMoves(){
-    auto t1 = std::chrono::high_resolution_clock::now();
+    // auto t1 = std::chrono::high_resolution_clock::now();
     
     MoveList pseudoList = getPseudoLegalMoves();
     MoveList legalMoves;
@@ -436,9 +560,9 @@ MoveList Chess::getLegalMoves(){
         stateHistory[totalMoves - 1] |= GAME_OVER;
     }
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    moveGenTime += ms_int.count();
+    // auto t2 = std::chrono::high_resolution_clock::now();
+    // auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    // moveGenTime += ms_int.count();
 
     return legalMoves;
 }

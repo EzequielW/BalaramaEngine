@@ -100,7 +100,7 @@ Minimax::Minimax() {
 }
 
 float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+    // auto t1 = std::chrono::high_resolution_clock::now();
 
 	int nodeScore[14] = { 0 };
     float nodeEvaluation = 0.0f;
@@ -179,9 +179,9 @@ float Minimax::heuristicEval(std::shared_ptr<Chess> chess) {
     nodeEvaluation += nodeScore[W_KING] - nodeScore[B_KING];
     nodeEvaluation /= 100;
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-    heuristicTime += ms_int.count();
+    // auto t2 = std::chrono::high_resolution_clock::now();
+    // auto ms_int = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+    // heuristicTime += ms_int.count();
 
     return nodeEvaluation;
 }
@@ -253,6 +253,7 @@ FinalEvaluation Minimax::searchABPruning(Chess chess, int depth) {
     finalEvaluation.steps = steps;
     finalEvaluation.heuristicTime = heuristicTime;
     finalEvaluation.moveGenTime = chessRef->moveGenTime;
+    std::copy(std::begin(evaluation.moveTree), std::end(evaluation.moveTree), std::begin(finalEvaluation.moveTree));
     return finalEvaluation;
 }
 
@@ -260,6 +261,7 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     steps += 1;
 
     if (depth == 0) {
+        // chess->getLegalMoves();
         Evaluation eval;
         // eval.result = heuristicEval(chess);
         eval.result = quiescenceSearch(chess, alpha, beta, 5);
@@ -282,22 +284,23 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     if (chess->colorTurn == WHITE) {
         Evaluation maxEval;
         maxEval.result = -INFINITE_EVAL;
-        float currentEval = -INFINITE_EVAL;
+        Evaluation currentEval;
+        currentEval.result = -INFINITE_EVAL;
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta);
 
-            if (currentEval >= maxEval.result) {
-                maxEval.result = currentEval;
+            if (currentEval.result >= maxEval.result) {
+                maxEval.result = currentEval.result;
                 maxEval.move = m;
-                // maxEval.moveTree[depth] = currentEval.moveTree[depth - 1];
+                maxEval.moveTree[depth] = currentEval.moveTree[depth - 1];
                 
-                // // Non leaf node
-                // if(currentEval.move.move != 0) {
-                //     std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(maxEval.moveTree));
-                // }
-                // maxEval.moveTree[depth] = m;
+                // Non leaf node
+                if(currentEval.move.move != 0) {
+                    std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(maxEval.moveTree));
+                }
+                maxEval.moveTree[depth] = m;
 
                 if (maxEval.result >= beta) {
                     chess->undoMove();
@@ -314,22 +317,23 @@ Evaluation Minimax::searchABPruningExec(std::shared_ptr<Chess> chess, int depth,
     else {
         Evaluation minEval;
         minEval.result = INFINITE_EVAL;
-        float currentEval = INFINITE_EVAL;
+        Evaluation currentEval;
+        currentEval.result = INFINITE_EVAL;
 
         for (Move m : moveList) {
             chess->makeMove(m);
-            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta).result;
+            currentEval = searchABPruningExec(chess, depth - 1, alpha, beta);
 
-            if (currentEval <= minEval.result) {
-                minEval.result = currentEval;
+            if (currentEval.result <= minEval.result) {
+                minEval.result = currentEval.result;
                 minEval.move = m;
-                // minEval.moveTree[depth] = currentEval.moveTree[depth - 1];
+                minEval.moveTree[depth] = currentEval.moveTree[depth - 1];
                 
-                // // Non leaf node
-                // if(currentEval.move.move != 0) {
-                //     std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(minEval.moveTree));
-                // }
-                // minEval.moveTree[depth] = m;
+                // Non leaf node
+                if(currentEval.move.move != 0) {
+                    std::copy(std::begin(currentEval.moveTree), std::end(currentEval.moveTree), std::begin(minEval.moveTree));
+                }
+                minEval.moveTree[depth] = m;
                 
                 if (minEval.result <= alpha) {
                     chess->undoMove();

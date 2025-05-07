@@ -371,15 +371,15 @@ void updateEval() {
 	std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
 	std::cout << evaluation.moveGenTime / 1000 << "ms move gen\n\n";
 
-	// for(Move m : evaluation.moveTree) {
-	// 	if(m.move == 0) {
-	// 		continue;
-	// 	}
-	// 	Square from = (Square)m.getFrom();
-	// 	Square to = (Square)m.getTo();
+	for(Move m : evaluation.moveTree) {
+		if(m.move == 0) {
+			continue;
+		}
+		Square from = (Square)m.getFrom();
+		Square to = (Square)m.getTo();
 
-	// 	std::cout << "\nMove from: " + squareToString(from) + ", to: " + squareToString(to) << std::endl;
-	// }
+		std::cout << "\nMove from: " + squareToString(from) + ", to: " + squareToString(to) + ", flag: " + std::to_string(m.getFlags()) << std::endl;
+	}
 
 	updatingEval = false;
 	evalCounter++;

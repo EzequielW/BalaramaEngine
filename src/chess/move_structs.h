@@ -61,6 +61,21 @@ const uint8_t CASTLE_H1 = (1 << 2);
 const uint8_t CASTLE_A8 = (1 << 3);
 const uint8_t CASTLE_H8 = (1 << 4);
 
+const uint64_t FIRST_ROW = (1ULL << A1) | (1ULL << B1) | (1ULL << C1) | (1ULL << D1) | (1ULL << E1) | (1ULL << F1) | (1ULL << G1) | (1ULL << H1);
+const uint64_t LAST_ROW = (1ULL << A8) | (1ULL << B8) | (1ULL << C8) | (1ULL << D8) | (1ULL << E8) | (1ULL << F8) | (1ULL << G8) | (1ULL << H8);
+
+const uint8_t FLAG_OFFSET = 8;
+const Piece flagToPiece[8] = {
+    W_KNIGHT,
+    W_BISHOP,
+    W_ROOK,
+    W_QUEEN,
+    W_KNIGHT,
+    W_BISHOP,
+    W_ROOK,
+    W_QUEEN,
+};
+
 // Moves are represented by 16 usigned integers, 12 bits for square from/to, and 4 bits for flags
 typedef struct Move {
     uint16_t move = 0;

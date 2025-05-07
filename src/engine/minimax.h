@@ -13,7 +13,7 @@ const float INFINITE_EVAL = 10000.0f;
 typedef struct Evaluation {
     float result;
     Move move;
-    // Move moveTree[256] = {}; 
+    Move moveTree[256] = {}; 
 } Evaluation;
 
 typedef struct FinalEvaluation {
@@ -22,6 +22,7 @@ typedef struct FinalEvaluation {
     int steps;
     long long heuristicTime;
     long long moveGenTime;
+    Move moveTree[256] = {}; 
 } FinalEvaluation;
 
 class Minimax {
