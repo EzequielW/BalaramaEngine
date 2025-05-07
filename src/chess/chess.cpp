@@ -2,7 +2,6 @@
 
 Chess::Chess(){
     gameState = CASTLE_A1 | CASTLE_H1 | CASTLE_A8 | CASTLE_H8;
-    enpassant = -1;
     halfMoves = 0;
     totalMoves = 0;
     colorTurn = WHITE;
@@ -203,6 +202,29 @@ void Chess::makeMove(Move pieceMove){
             }
             break;
         }
+        case DOUBLE_PAWN: {
+            if(colorTurn == WHITE) {
+                enpassant[totalMoves] = (Square)(from + 8U);
+            }
+            else {
+                enpassant[totalMoves] = (Square)(from - 8U);
+            }
+            break;
+        }
+        case EP_CAPTURE: {
+            // Offset to get en passant captured pawn
+            if(colorTurn == WHITE) {
+                to = (Square)(to - 8U);
+            }
+            else {
+                to = (Square)(to + 8U);
+            }
+            toBB = (i << to);
+            captureHistory[totalMoves] = pieceAt[to];
+            currentBoard[oppColor] ^= toBB;
+            currentBoard[captureHistory[totalMoves]] ^= toBB;
+            break;
+        }
         default: break;
     }
 
@@ -287,6 +309,11 @@ void Chess::undoMove(){
             currentBoard[pieceType] ^= fromToBB;
             break;
         }
+        case DOUBLE_PAWN: {
+            currentBoard[pieceType] ^= fromToBB;
+            enpassant[totalMoves - 1] = A1;
+            break;
+        }
         case CAPTURE_MOVE: {
             currentBoard[pieceType] ^= fromToBB;
             currentBoard[colorTurn] ^= toBB;
@@ -305,6 +332,23 @@ void Chess::undoMove(){
             currentBoard[oppColor + W_PAWN] ^= fromBB;
             pieceAt[from] = (Piece)(oppColor + W_PAWN);     
             
+            currentBoard[colorTurn] ^= toBB;
+            currentBoard[captureHistory[totalMoves - 1]] ^= toBB;
+            pieceAt[to] = captureHistory[totalMoves - 1];
+            break;
+        }
+        case EP_CAPTURE: {
+            currentBoard[pieceType] ^= fromToBB;
+
+            // Offset to get en passant captured pawn
+            if(oppColor == WHITE) {
+                to = (Square)(to - 8U);
+            }
+            else {
+                to = (Square)(to + 8U);
+            }
+
+            toBB = (i << to);
             currentBoard[colorTurn] ^= toBB;
             currentBoard[captureHistory[totalMoves - 1]] ^= toBB;
             pieceAt[to] = captureHistory[totalMoves - 1];
@@ -363,7 +407,7 @@ inline void Chess::getMovesFromBB(MoveList &moveList, uint64_t bitboard, Square 
             }
             break;
         }
-        case QUIET_MOVE: case CAPTURE_MOVE: {
+        case QUIET_MOVE: case CAPTURE_MOVE: case DOUBLE_PAWN: {
             while(bitboard > 0){
                 Square squareTo = (Square)__builtin_ctzll(bitboard);
                 bitboard &= bitboard - 1;
@@ -382,23 +426,46 @@ MoveList Chess::getPseudoLegalMoves(){
     uint64_t playerBoard = currentBoard[colorTurn];
     MoveList moveList;
 
+    uint64_t promotionRow = colorTurn == WHITE ? LAST_ROW : FIRST_ROW;
+    Square doublePawnMin = colorTurn == WHITE ? A2 : A7;
+    Square doublePawnMax = colorTurn == WHITE ? H2 : H7;
+
+    uint64_t enpassantBB = 0;
+    if(enpassant[totalMoves - 1] > 0) {
+        enpassantBB = 1ULL << enpassant[totalMoves - 1];
+    }
+
     int sq;
     while(playerBoard){
-        int sq = __builtin_ctzll(playerBoard);
+        sq = __builtin_ctzll(playerBoard);
         playerBoard &= playerBoard - 1;
 
         uint64_t moves = 0;
         uint64_t captures = 0;
         uint64_t promotions = 0;
         uint64_t capturePromotions = 0;
-        uint64_t promotionRow = colorTurn == WHITE ? LAST_ROW : FIRST_ROW;
+        Square doublePawn = A1;
         Piece pieceType = pieceAt[sq];
 
         switch(pieceType) {
             case W_PAWN: case B_PAWN: {
-                uint64_t blockers = generator.rookMoves[sq] & occupiedBoard;
-                moves = generator.pawnMoves[colorTurn][sq] & generator.rookMoveboard[sq][blockers];
+                moves = generator.pawnMoves[colorTurn][sq];
                 captures = generator.pawnAttacks[colorTurn][sq];
+
+                if(sq >= doublePawnMin && sq <= doublePawnMax) {
+                    uint64_t blockers = generator.doublePawns[colorTurn][sq] & occupiedBoard;
+                    doublePawn = (Square)generator.doublePawnMoveboard[sq][blockers];
+
+                    if(doublePawn != 0U) {
+                        Move doublePawnMove((Square)sq, doublePawn, DOUBLE_PAWN);
+                        moveList.add(doublePawnMove);
+                    }
+                }
+
+                if(enpassantBB && (enpassantBB & captures)) {
+                    Move enpassantMove((Square)sq, enpassant[totalMoves - 1], EP_CAPTURE);
+                    moveList.add(enpassantMove);
+                }
                 break;
             }
             case W_KNIGHT: case B_KNIGHT: {
@@ -442,10 +509,6 @@ MoveList Chess::getPseudoLegalMoves(){
             capturePromotions = promotionRow & captures;
             moves &= ~promotionRow;
             captures &= ~promotionRow;
-        }
-        else {
-            promotions = 0;
-            capturePromotions = 0;
         }
 
         if (moves > 0) {
@@ -571,22 +634,20 @@ PerftResults Chess::perft(int depth) {
     PerftResults results;
 
     MoveList moves = getLegalMoves();
-
-    if (gameState & GAME_OVER) {
-        if(moveHistory[totalMoves  - 1].getFlags() == CAPTURE_MOVE) {
-            results.captures++;
-        }
-
-        // std::cout << "\nCheckmate: " + getFen() + "\n"<< std::endl;
-
-        results.totalCount++;
-        results.checkmates++;
-        return results;
-    }
+    uint8_t flags = moveHistory[totalMoves - 1].getFlags();
 
     if(depth == 0) {
-        if(moveHistory[totalMoves - 1].getFlags() == CAPTURE_MOVE) {
+        if(flags == CAPTURE_MOVE || flags == KNIGHT_PROMOTION_C 
+            || flags == BISHOP_PROMOTION_C || flags == ROOK_PROMOTION_C || flags == QUEEN_PROMOTION_C) {
             results.captures++;
+        }
+        else if(flags == EP_CAPTURE) {
+            results.captures++;
+            results.enpassant++;
+        }
+
+        if (gameState & GAME_OVER) {
+            results.checkmates++;
         }
 
         results.totalCount++;
@@ -728,8 +789,8 @@ std::string Chess::getFen() {
 
     // En passant
     fen += ' ';
-    if(enpassant > 0) {
-        fen += squareToString((Square) enpassant);
+    if(enpassant[totalMoves - 1] > 0) {
+        fen += squareToString(enpassant[totalMoves - 1]);
     }
     else {
         fen += '-';
@@ -739,7 +800,7 @@ std::string Chess::getFen() {
     fen += ' ' + std::to_string(halfMoves);
 
     // Total moves
-    fen += ' ' + std::to_string(totalMoves);
+    fen += ' ' + std::to_string((totalMoves / 2) + 1);
 
     return fen;
 }

@@ -16,12 +16,14 @@ typedef struct PerftResults {
     long captures = 0;
     long checks = 0;
     long checkmates = 0;
+    long enpassant = 0;
 
     void add(PerftResults other) {
         totalCount += other.totalCount;
         captures += other.captures;
         checks += other.checks;
         checkmates += other.checkmates;
+        enpassant += other.enpassant;
     }
 } PerftResults;
 
@@ -31,6 +33,7 @@ public:
     Move moveHistory[512] = {};
     uint8_t stateHistory[512] = { 0 };
     Piece captureHistory[512] = { UNKNOWN };
+    Square enpassant[512] = { A1 };
 
     // Array representing the current state of the board
     uint64_t currentBoard[14] = {
@@ -55,7 +58,6 @@ public:
 
     // Tell us about castling rights and who is going to move next
     uint8_t gameState;
-    int enpassant;
     // Moves since capture or pawn move
     int halfMoves;
     int totalMoves;

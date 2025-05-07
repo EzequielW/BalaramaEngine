@@ -57,15 +57,49 @@ void Generator::genPawnMoves(){
     for(int i = 0; i < 64; i++){
         whiteMoves = 256;
         blackMoves = 36028797018963968;
-        if(i >= A2 && i <= H2){
-            whiteMoves = 65792;
-        }
-        else if(i >= A7 && i <=H7){
-            blackMoves = 36169534507319296;
-        }
 
         pawnMoves[WHITE][i] = whiteMoves << i;
         pawnMoves[BLACK][i] = blackMoves >> (63 - i);
+    }
+
+    for(int i = A2; i <= H2; i++){
+        whiteMoves = 65792; 
+        uint64_t whiteDouble = 65536;
+
+        doublePawns[WHITE][i] = whiteMoves << i;
+        int bitLength = bitCountSet(doublePawns[WHITE][i]);
+
+        for(int j = 0; j < (1 << bitLength); j++){
+            uint64_t blockersBoard = genBlockerBoard(j, doublePawns[WHITE][i]);
+            uint8_t square = 0;
+
+            if(blockersBoard == 0) {
+                uint64_t finalSquare = whiteDouble << i;
+                square = __builtin_ctzll(finalSquare);
+            }
+
+            doublePawnMoveboard[i][blockersBoard] = square;
+        }
+    }
+
+    for(int i = A7; i <= H7; i++){
+        blackMoves = 36169534507319296;
+        uint64_t blackDouble = 140737488355328;
+
+        doublePawns[BLACK][i] = blackMoves >> (63 - i);
+        int bitLength = bitCountSet(doublePawns[BLACK][i]);
+
+        for(int j = 0; j < (1 << bitLength); j++){
+            uint64_t blockersBoard = genBlockerBoard(j, doublePawns[BLACK][i]);
+            uint8_t square = 0;
+
+            if(blockersBoard == 0) {
+                uint64_t finalSquare = blackDouble >> (63 - i);
+                square = __builtin_ctzll(finalSquare);
+            }
+
+            doublePawnMoveboard[i][blockersBoard] = square;
+        }
     }
 }
 

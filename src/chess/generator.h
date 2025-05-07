@@ -15,6 +15,10 @@ public:
     uint64_t kingMoves[64];
     uint64_t pawnAttacks[2][64];
 
+    // Double pawn moves
+    uint64_t doublePawns[2][64] = { 0 };
+    std::unordered_map<uint64_t, uint8_t> doublePawnMoveboard[64];
+
     // Contains directional rays from all squares without blockers
     uint64_t rayMoves[64][8];
 

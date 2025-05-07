@@ -12,6 +12,7 @@ const getEvaluation = () => {
     const pieceType = Chess.getPieceAt(move.from)
     let pieceChar = String.fromCharCode(Module.pieceToString(pieceType))
     pieceChar = pieceChar === 'p' || pieceChar === 'P' ? '' : pieceChar
+
     const bestMove = {
         from: Module.squareToString(move.from),
         to: Module.squareToString(move.to),
@@ -46,16 +47,48 @@ self.onmessage = async function (e) {
     }
 
     if (newMove && legalMoves) {
-        newMove.castleFrom = 'a1'
-        newMove.castleTo = 'a1'
         let flag = Module.MoveFlag.QUIET_MOVE
 
         // for rook movement during castle
-        if(newMove.flags === 'k') {
+        if(newMove.flags === 'b') {
+            flag = Module.MoveFlag.DOUBLE_PAWN
+        }
+        else if(newMove.flags === 'k') {
             flag = Module.MoveFlag.KING_CASTLE
         }
         else if(newMove.flags === 'q') {  
             flag = Module.MoveFlag.QUEEN_CASTLE
+        }
+        else if(newMove.flags === 'e') {
+            flag = Module.MoveFlag.EP_CAPTURE
+        }
+        else if(newMove.flags === 'np') {
+            if(newMove.promotion === 'n') {
+                flag = Module.MoveFlag.KNIGHT_PROMOTION
+            }
+            else if(newMove.promotion === 'b') {
+                flag = Module.MoveFlag.BISHOP_PROMOTION
+            }
+            if(newMove.promotion === 'r') {
+                flag = Module.MoveFlag.ROOK_PROMOTION
+            }
+            if(newMove.promotion === 'q') {
+                flag = Module.MoveFlag.QUEEN_PROMOTION
+            }
+        }
+        else if(newMove.flags === 'cp') {
+            if(newMove.promotion === 'n') {
+                flag = Module.MoveFlag.KNIGHT_PROMOTION_C
+            }
+            else if(newMove.promotion === 'b') {
+                flag = Module.MoveFlag.BISHOP_PROMOTION_C
+            }
+            if(newMove.promotion === 'r') {
+                flag = Module.MoveFlag.ROOK_PROMOTION_C
+            }
+            if(newMove.promotion === 'q') {
+                flag = Module.MoveFlag.QUEEN_PROMOTION_C
+            }
         }
         else if(newMove.captured) {
             flag = Module.MoveFlag.CAPTURE_MOVE

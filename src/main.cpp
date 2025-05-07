@@ -371,15 +371,15 @@ void updateEval() {
 	std::cout << evaluation.heuristicTime / 1000 << "ms heuristic\n";
 	std::cout << evaluation.moveGenTime / 1000 << "ms move gen\n\n";
 
-	for(Move m : evaluation.moveTree) {
-		if(m.move == 0) {
-			continue;
-		}
-		Square from = (Square)m.getFrom();
-		Square to = (Square)m.getTo();
+	// for(Move m : evaluation.moveTree) {
+	// 	if(m.move == 0) {
+	// 		continue;
+	// 	}
+	// 	Square from = (Square)m.getFrom();
+	// 	Square to = (Square)m.getTo();
 
-		std::cout << "\nMove from: " + squareToString(from) + ", to: " + squareToString(to) + ", flag: " + std::to_string(m.getFlags()) << std::endl;
-	}
+	// 	std::cout << "\nMove from: " + squareToString(from) + ", to: " + squareToString(to) + ", flag: " + std::to_string(m.getFlags()) << std::endl;
+	// }
 
 	updatingEval = false;
 	evalCounter++;
@@ -391,11 +391,18 @@ void doPerft() {
 	Chess chessboardCopy = chess;
 	chessboardCopy.moveGenTime = 0;
 
+	auto t1 = std::chrono::high_resolution_clock::now();
+
 	PerftResults results = chessboardCopy.perft(depth);
 
-	std::cout << "\nPerft results depth: " + std::to_string(depth) + "\n" << std::endl;
-	std::cout << "\nNodes: " + std::to_string(results.totalCount) + "\n" << std::endl;
-	std::cout << "\nCaptures: " + std::to_string(results.captures) + "\n" << std::endl;
-	std::cout << "\nCheckmates: " + std::to_string(results.checkmates) + "\n" << std::endl;
-	std::cout << results.totalCount * 1000 / chessboardCopy.moveGenTime << " knodes\n";
+	auto t2 = std::chrono::high_resolution_clock::now();
+	auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+	std::cout << "\nPerft results depth: " + std::to_string(depth) << std::endl;
+	std::cout << "Nodes: " + std::to_string(results.totalCount) << std::endl;
+	std::cout << "Captures: " + std::to_string(results.captures) << std::endl;
+	std::cout << "Checkmates: " + std::to_string(results.checkmates) << std::endl;
+	std::cout << "Enpassant: " + std::to_string(results.enpassant) << std::endl;
+	std::cout << "Execution time: " + std::to_string(ms_int.count()) + "ms" << std::endl;
+	std::cout << std::to_string(results.totalCount / ms_int.count()) + " knodes" << std::endl;
 }
